@@ -1,0 +1,5 @@
+IMAGE_INSTALL += "kernel-module-tja1145"
+IMAGE_INSTALL += "python-ftk"
+IMAGE_INSTALL += "packagegroup-tools-bluetooth"
+IMAGE_INSTALL += "bluez5"
+IMAGE_INSTALL += "bluez5-obex"
