@@ -437,19 +437,6 @@ static int sitec_lp_probe(struct spi_device *client)
 		goto exit_free;
 	}
 
-	priv->irq = of_get_named_gpio(np, "interrupt-gpio", 0);
-	if (priv->gpio < 0) {
-		dev_err(priv->dev, "Can't get interrupt gpio\n");
-		err = -EINVAL;
-		goto exit_gpio;
-	}
-
-	if (!gpio_is_valid(priv->irq)) {
-		dev_err(priv->dev, "Interrupt gpio is not valid\n");
-		err = -EINVAL;
-		goto exit_gpio;
-	}
-
 	err = sysfs_create_group(&priv->dev->kobj, &sitec_lp_attr_group);
 	if (err) {
 		dev_err(priv->dev, "Can't create sysfs entries\n");
