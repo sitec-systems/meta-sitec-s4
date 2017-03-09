@@ -51,24 +51,6 @@ static void sitec_lp_sts_crc(u8 *data, size_t len)
 	data[len-1] = ~crc;
 }
 
-static int sitec_lp_irq_ctrl(struct device *dev, u8 state)
-{
-	int err;
-	struct sitec_lp_priv *d = dev_get_drvdata(dev);
-
-	if (state) {
-		err = devm_gpio_request_one(dev, d->irq, GPIOF_IN, "rdy-gpio");
-		if (err < 0) {
-			dev_err(priv->dev, "Unable to rquest interrupt gpio\n");
-			return err;
-		}
-	} else {
-		gpio_free(d->irq);
-	}
-
-	return 0;
-}
-
 static int sitec_lp_spi_recv(struct device *dev, u8 *data, size_t len, long delay)
 {
 	struct sitec_lp_priv *d = dev_get_drvdata(dev);
@@ -258,24 +240,16 @@ static ssize_t sitec_lp_fm_c_test_store(struct device *dev,
 	u8 fm_buffer[256];
 	u8 cmd;
 
-	err = sitec_lp_irq_ctrl(dev, 1);
-	if (err) {
-		dev_err(dev, "Can't access rdy gpio\n");
-		return err;
-	}
-
 #if 0
 	/* Try to recv '?' from FM */
 	err = sitec_lp_fm_recv(dev, fm_buffer, 3);
 	if (err) {
 		dev_err(dev, "Can't receive data from FM (err = %d)\n", err);
-		sitec_lp_irq_ctrl(dev, 0);
 		return err;
 	}
 
 	if (fm_buffer[2] != '?') {
 		dev_err(dev, "LP Controller is not in FM mode\n");
-		sitec_lp_irq_ctrl(dev, 0);
 		return -EIO;
 	}
 #endif
@@ -289,7 +263,6 @@ static ssize_t sitec_lp_fm_c_test_store(struct device *dev,
 	if (err) {
 		dev_err(dev, "Can't send C commant to FM (err = %d)\n", err);
 		// TODO: Error Handling improvements
-		sitec_lp_irq_ctrl(dev, 0);
 		return err;
 	}
 
@@ -300,7 +273,6 @@ static ssize_t sitec_lp_fm_c_test_store(struct device *dev,
 	err = sitec_lp_fm_recv(dev, fm_buffer, 18);
 	if (err) {
 		dev_err(dev, "Can't get checksum for Flash (err = %d)\n", err);
-		sitec_lp_irq_ctrl(dev, 0);
 		return err;
 	}
 
@@ -308,8 +280,6 @@ static ssize_t sitec_lp_fm_c_test_store(struct device *dev,
 #ifdef DEBUG
 	dev_info(dev, "CRC %s\n", fm_buffer);
 #endif // DEBUG
-
-	sitec_lp_irq_ctrl(dev, 0);
 
 	return count;
 }
@@ -361,6 +331,7 @@ static void sitec_lp_restart(void)
 
 static void sitec_lp_halt(void)
 {
+	sitec_lp_sts_c(priv->dev);
 }
 
 static int sitec_lp_notify_sys(struct notifier_block *this, unsigned long code,
@@ -370,11 +341,16 @@ static int sitec_lp_notify_sys(struct notifier_block *this, unsigned long code,
 	case SYS_RESTART:
 		dev_info(priv->dev, "Catch down event\n");
 		sitec_lp_restart();
+#ifdef DEBUG
 		dev_info(priv->dev, "Restart the system\n");
+#endif // DEBUG
 		break;
 	case SYS_HALT:
 		dev_info(priv->dev, "Catch halt event\n");
 		sitec_lp_halt();
+#ifdef DEBUG
+		dev_info(priv->dev, "Shutdown the system\n");
+#endif // DEBUG
 		break;
 	default:
 		dev_info(priv->dev, "Unknown event\n");
@@ -448,9 +424,6 @@ static int sitec_lp_probe(struct spi_device *client)
 		dev_err(priv->dev, "Can't register reboot notifier (err=%d)\n", err);
 		goto exit_irq;
 	}
-
-	/* sitec_lp_sts_crc(shutdown_frame, ARRAY_SIZE(shutdown_frame)); */
-	/* sitec_lp_sts_crc(shutdown_frame, ARRAY_SIZE(fm_frame)); */
 
 	dev_info(priv->dev, "Successfully initialized\n");
 
