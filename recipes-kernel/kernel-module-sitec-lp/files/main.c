@@ -28,179 +28,15 @@
 #include <linux/reboot.h>
 #include <linux/delay.h>
 
-#define SITEC_LP_VERSION "1.0.0"
+#include "sitec_lp.h"
+#include "sts_fm.h"
 
-struct sitec_lp_priv {
-	struct device *dev;
-	struct spi_device *spi;
-	int gpio;
-	int irq;
-};
+#define SITEC_LP_VERSION "1.0.0"
 
 struct sitec_lp_priv *priv;
 
-static void sitec_lp_sts_crc(u8 *data, size_t len)
-{
-	int i;
-	u8 crc = data[0];
-	
-	for (i = 1; i < len -1; i++) {
-		crc ^= data[i];
-	}
-
-	data[len-1] = ~crc;
-}
-
-static int sitec_lp_spi_recv(struct device *dev, u8 *data, size_t len, long delay)
-{
-	struct sitec_lp_priv *d = dev_get_drvdata(dev);
-	int i;
-	int err;
-	u8 buf;
-
-	for (i = 0; i < len; i++) {
-		err = spi_read(d->spi, &buf, 1);
-		if (err) {
-			return err;
-		}
-		dev_info(dev, "Read SPI Byte [%d] [0x%02x]\n", i, buf);
-		data[i] = buf;
-		mdelay(delay);
-	}
-
-	return 0;
-}
-
-static int sitec_lp_spi_send(struct device *dev, u8 *data, size_t len, long delay)
-{
-	struct sitec_lp_priv *d = dev_get_drvdata(dev);
-	int i;
-	int err;
-	u8 buf;
-
-	for (i = 0; i < len; i++) {
-		buf = data[i];
-#ifdef DEBUG
-		dev_info(dev, "Write SPI Byte [0x%02x]\n", buf);
-#endif // DEBUG
-		err = spi_write(d->spi, &buf, 1);
-		if (err) {
-			return err;
-		}
-		mdelay(delay);
-	}
-
-	return 0;
-}
-
-static int sitec_lp_sts_send(struct device *dev, u8 *data, size_t len)
-{
-	return sitec_lp_spi_send(dev, data, len, 10);
-}
-
-static int sitec_lp_sts_recv(struct device *dev, u8 *data, size_t len)
-{
-	return sitec_lp_spi_recv(dev, data, len, 10);
-}
-
-static int sitec_lp_fm_send(struct device *dev, u8 *data, size_t len)
-{
-	return sitec_lp_spi_send(dev, data, len, 100);
-}
-
-static int sitec_lp_fm_recv(struct device *dev, u8 *buf, size_t len)
-{
-	int ret;
-	int i;
-	u8 byte;
-	struct sitec_lp_priv *d = dev_get_drvdata(dev);
-
-	for (i = 0; i < len; i++) {
-		/* while (gpio_get_value(d->irq) == 1) { */
-		/* 	// Wait for device to become active */
-		/* 	mdelay(100); */
-		/* } */
-		dev_info(dev, "Read byte\n");
-		ret = spi_read(d->spi, &byte, 1);
-		if (ret) {
-			goto exit_fm_recv;
-		}
-#ifdef DEBUG
-		dev_info(dev, "Readed byted [0x%02x]\n", byte);
-#endif // DEBUG
-		buf[i] = byte;
-		mdelay(100);
-	}
-
-exit_fm_recv:
-	return ret;
-}
-
-static int sitec_lp_sts_i(struct device *dev)
-{
-	int err;
-	u8 id_frame[] = {'#', 'S', 'T', 'S', 0x01, 0xFE, 0x03, 'I', 0x10, '1', 0x00};
-	u8 rx_buf[128];
-	
-	sitec_lp_sts_crc(id_frame, ARRAY_SIZE(id_frame));
-	dev_info(dev, "Send sts i frame\n");
-	err = sitec_lp_sts_send(dev, id_frame, ARRAY_SIZE(id_frame));
-	if (err) {
-		return err;
-	}
-
-	mdelay(100);
-
-	dev_info(dev, "Recv answer\n");
-	err = sitec_lp_sts_recv(dev, rx_buf, ARRAY_SIZE(rx_buf));
-	if (err) {
-		dev_info(dev, "Can't recv something\n");
-		return err;
-	}
-
-	return 0;
-}
-
-static int sitec_lp_sts_c(struct device *dev)
-{
-	int err;
-	u8 sh_frame[] = {'#', 'S', 'T', 'S', 0x01, 0xFE, 0x04, 'C', 0x10, 'N', '1', 0x00};
-	
-	sitec_lp_sts_crc(sh_frame, ARRAY_SIZE(sh_frame));
-#ifdef DEBUG
-	dev_info(dev, "Send sts c n 1 frame\n");
-#endif // DEBUG
-	err = sitec_lp_sts_send(dev, sh_frame, ARRAY_SIZE(sh_frame));
-	if (err) {
-		return err;
-	}
-	
-	return 0;
-}
-
-static int sitec_lp_sts_u(struct device *dev)
-{
-	int err;
-	u8 fm_frame[] = {'#', 'S', 'T', 'S', 0x01, 0xFE, 0x02, 'U', 0x10, 0x00};
-
-	sitec_lp_sts_crc(fm_frame, ARRAY_SIZE(fm_frame));
-#ifdef DEBUG
-	dev_info(dev, "Send sts u frame\n");
-#endif // DEBUG
-
-	/* Switch into FM Mode */
-	err = sitec_lp_sts_send(dev, fm_frame, ARRAY_SIZE(fm_frame));
-	if (err) {
-		return err;
-	}
-
-	return 0;
-}
-
-static ssize_t sitec_lp_sts_i_test_store(struct device *dev,
-										 struct device_attribute *attr,
-										 const char *buf,
-										 size_t count)
+static ssize_t sitec_lp_sts_i_test_store(struct device *dev, struct device_attribute *attr,
+	const char *buf, size_t count)
 {
 	int err;
 
@@ -214,10 +50,8 @@ static ssize_t sitec_lp_sts_i_test_store(struct device *dev,
 
 static DEVICE_ATTR(sts_i_test, S_IWUSR, NULL, sitec_lp_sts_i_test_store);
 
-static ssize_t sitec_lp_sts_u_test_store(struct device *dev,
-										 struct device_attribute *attr,
-										 const char *buf,
-										 size_t count)
+static ssize_t sitec_lp_sts_u_test_store(struct device *dev, struct device_attribute *attr,
+	 const char *buf, size_t count)
 {
 	int err;
 
@@ -231,28 +65,12 @@ static ssize_t sitec_lp_sts_u_test_store(struct device *dev,
 
 static DEVICE_ATTR(sts_u_test, S_IWUSR, NULL, sitec_lp_sts_u_test_store);
 
-static ssize_t sitec_lp_fm_c_test_store(struct device *dev,
-										struct device_attribute *attr,
-										const char *buf,
-										size_t count)
+static ssize_t sitec_lp_fm_c_test_store(struct device *dev, struct device_attribute *attr,
+	const char *buf, size_t count)
 {
 	int err;
 	u8 fm_buffer[256];
 	u8 cmd;
-
-#if 0
-	/* Try to recv '?' from FM */
-	err = sitec_lp_fm_recv(dev, fm_buffer, 3);
-	if (err) {
-		dev_err(dev, "Can't receive data from FM (err = %d)\n", err);
-		return err;
-	}
-
-	if (fm_buffer[2] != '?') {
-		dev_err(dev, "LP Controller is not in FM mode\n");
-		return -EIO;
-	}
-#endif
 
 #ifdef DEBUG
 	dev_info(dev, "Send C cmd to FM\n");
@@ -285,10 +103,30 @@ static ssize_t sitec_lp_fm_c_test_store(struct device *dev,
 }
 static DEVICE_ATTR(fm_c_test, S_IWUSR, NULL, sitec_lp_fm_c_test_store);
 
-static ssize_t sitec_lp_sts_c_test_store(struct device *dev,
-										 struct device_attribute *attr,
-										 const char *buf,
-										 size_t count)
+static ssize_t sitec_lp_fm_g_test_store(struct device *dev, struct device_attribute *attr,
+	const char *buf, size_t count)
+{
+	int err;
+	u8 cmd;
+
+#ifdef DEBUG
+	dev_info(dev, "Send G cmd to FM\n");
+#endif // DEBUG
+	cmd = 'G';
+	err = sitec_lp_fm_send(dev, &cmd, 1);
+	if (err) {
+		dev_err(dev, "Can't send G command to FM (err = %d)\n", err);
+		// TODO: Error Handling improvements
+		return err;
+	}
+
+	return count;
+}
+static DEVICE_ATTR(fm_g_test, S_IWUSR, NULL, sitec_lp_fm_g_test_store);
+
+
+static ssize_t sitec_lp_sts_c_test_store(struct device *dev, struct device_attribute *attr,
+	const char *buf, size_t count)
 {
 	int err;
 
@@ -303,9 +141,7 @@ static ssize_t sitec_lp_sts_c_test_store(struct device *dev,
 
 static DEVICE_ATTR(sts_c_test, S_IWUSR, NULL, sitec_lp_sts_c_test_store);
 
-static ssize_t sitec_lp_version_show(struct device *dev,
-									 struct device_attribute *attr,
-									 char *buf)
+static ssize_t sitec_lp_version_show(struct device *dev, struct device_attribute *attr, char *buf)
 {
 	return sprintf(buf, "Version: %s\n", SITEC_LP_VERSION);
 }
@@ -317,6 +153,7 @@ static struct attribute *sitec_lp_attributes[] = {
 	&dev_attr_sts_u_test.attr,
 	&dev_attr_sts_i_test.attr,
 	&dev_attr_fm_c_test.attr,
+	&dev_attr_fm_g_test.attr,
 	NULL,
 };
 
@@ -337,20 +174,21 @@ static void sitec_lp_halt(void)
 static int sitec_lp_notify_sys(struct notifier_block *this, unsigned long code,
 	void *unused)
 {
+	dev_info(priv->dev, "Recv reboot code 0x%x\n", code);
 	switch(code) {
 	case SYS_RESTART:
-		dev_info(priv->dev, "Catch down event\n");
+		dev_dbg(priv->dev, "Catch down event\n");
 		sitec_lp_restart();
-#ifdef DEBUG
 		dev_info(priv->dev, "Restart the system\n");
-#endif // DEBUG
 		break;
 	case SYS_HALT:
-		dev_info(priv->dev, "Catch halt event\n");
+		dev_dbg(priv->dev, "Catch halt event\n");
 		sitec_lp_halt();
-#ifdef DEBUG
 		dev_info(priv->dev, "Shutdown the system\n");
-#endif // DEBUG
+		break;
+	case SYS_POWER_OFF:
+		dev_info(priv->dev, "Catch Power Off event\n");
+		sitec_lp_halt();
 		break;
 	default:
 		dev_info(priv->dev, "Unknown event\n");
@@ -367,9 +205,9 @@ static int sitec_lp_probe(struct spi_device *client)
 {
 	int err = 0;
 	struct device_node *np;
-		
+
 	dev_info(&client->dev, "Initialize low power routine ...\n");
-	
+
 	err = spi_setup(client);
 	if (err < 0) {
 		dev_err(&client->dev, "Can't setup SPI interface\n");
@@ -386,7 +224,7 @@ static int sitec_lp_probe(struct spi_device *client)
 	dev_set_drvdata(&client->dev, priv);
 	priv->dev = &client->dev;
 	priv->spi = client;
-	
+
 	np = priv->dev->of_node;
 	if (!np) {
 		dev_err(priv->dev, "Unable to get data from of node\n");
@@ -445,7 +283,7 @@ exit:
 static int sitec_lp_remove(struct spi_device *client)
 {
 	struct sitec_lp_priv *d = dev_get_drvdata(&client->dev);
-	
+
 	unregister_reboot_notifier(&sitec_lp_notifier);
 	sysfs_remove_group(&d->dev->kobj, &sitec_lp_attr_group);
 	gpio_free(priv->irq);

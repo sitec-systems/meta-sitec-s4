@@ -1,4 +1,5 @@
 obj-m := sitec_lp.o
+sitec_lp-objs := sts_fm.o main.o
 
 SRC := $(shell pwd)
 
