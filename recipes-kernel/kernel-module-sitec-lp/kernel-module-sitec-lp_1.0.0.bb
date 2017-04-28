@@ -6,6 +6,7 @@ MAINTAINER = "Robert Lehmann <robert.lehmann@sitec-systems.de>"
 inherit module
 
 PR = "r1"
+PV = "${KERNEL_VERSION}"
 
 SRC_URI = "file://Makefile \
            file://main.c \
