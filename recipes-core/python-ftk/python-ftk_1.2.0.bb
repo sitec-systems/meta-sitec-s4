@@ -8,7 +8,7 @@ PR = "r0"
 LICENSE = "LGPL-2.1"
 LIC_FILES_CHKSUM = "file://${COREBASE}/meta/files/common-licenses/LGPL-2.1;md5=1a6d268fd218675ffea8be556788b780"
 
-RDEPENDS_${PN} = "python python-argparse python-subprocess mtd-utils-ubifs u-boot-imx-fw-utils"
+RDEPENDS_${PN} = "python python-argparse python-subprocess mtd-utils-ubifs u-boot-fw-utils"
 
 SRCNAME = "ftk"
 SRC_URI = "https://github.com/sitec-systems/ftk/releases/download/${PV}/${SRCNAME}-${PV}.tar.gz"
