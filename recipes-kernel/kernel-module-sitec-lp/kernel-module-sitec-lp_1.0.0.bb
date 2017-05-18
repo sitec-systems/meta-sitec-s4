@@ -10,7 +10,6 @@ PV = "${KERNEL_VERSION}"
 
 SRC_URI = "file://Makefile \
            file://main.c \
-           file://COPYING \
            file://sitec_lp.h \
            file://sts_fm.c \
            file://sts_fm.h \
