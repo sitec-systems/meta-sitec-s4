@@ -5,8 +5,9 @@ MAINTAINER = "Robert Lehmann <robert.lehmann@sitec-systems.de>"
 
 inherit module
 
-PR = "r1"
+PR = "r2"
 PV = "${KERNEL_VERSION}"
+FILESEXTRAPATHS_append := "${THISDIR}/${PN}:"
 
 SRC_URI = "file://Makefile \
            file://main.c \
