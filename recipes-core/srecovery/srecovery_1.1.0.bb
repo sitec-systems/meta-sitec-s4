@@ -10,9 +10,9 @@ LIC_FILES_CHKSUM = "file://${COREBASE}/meta/files/common-licenses/LGPL-2.1;md5=1
 SRC_URI = "file://srecovery.sh"
 S = "${WORKDIR}"
 
-PR = "r0"
+PR = "r1"
 
-RDEPENDS_${PN} = "mtd-utils-ubifs u-boot-imx-fw-utils flashubi"
+RDEPENDS_${PN} = "mtd-utils-ubifs u-boot-fw-utils flashubi"
 
 inherit update-rc.d
 
