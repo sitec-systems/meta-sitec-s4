@@ -5,7 +5,9 @@ MAINTAINER = "Robert Lehmann <robert.lehmann@sitec-systems.de>"
 
 inherit module
 
-PR = "r2"
+require recipes-kernel/linux/sitec-kernel-revision.inc
+
+PR = "${SITEC_KERNEL_REVISION}"
 PV = "1.0.0"
 
 SRC_URI = "file://Makefile \
