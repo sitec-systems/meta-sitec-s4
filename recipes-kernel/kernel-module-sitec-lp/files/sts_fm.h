@@ -28,11 +28,23 @@
 #include <linux/device.h>
 #include <linux/slab.h>
 
+#define DATA_MAXSIZE 245
+#define MSG_MAXSIZE 256
+
+struct sts_msg {
+    u8 data[DATA_MAXSIZE]; // msg
+    u8 fg_id; // function group id
+    u8 version; // version of sts command
+    u8 len; // length of the sts data + 2
+};
+
 /**
  * @brief Sends a sts command via the low power mcu.
  *
- * This function is a low level function for sending data to the low power mcu. The functions
- * doesn't perform any checks if the sts frame is valid. This needs to be done before calling that
+ * This function is a low level function for sending data to the low power mcu.
+ * The functions
+ * doesn't perform any checks if the sts frame is valid. This needs to be done
+ * before calling that
  * function.
  * @param dev Pointer to the global device structure
  * @param data Data array which will be written to the mcu
@@ -44,8 +56,10 @@ int sitec_lp_sts_send(struct device *dev, u8 *data, size_t len);
 /**
  * @brief Receives a sts response from the low power mcu.
  *
- * This function receives data which is send by the low power mcu to the ARM core. The function
- * doesn't perform any checks if the received sts frame is valid. This needs to be done by the caller
+ * This function receives data which is send by the low power mcu to the ARM
+ * core. The function
+ * doesn't perform any checks if the received sts frame is valid. This needs to
+ * be done by the caller
  * of the function.
  * @param dev Pointer to the global device structure
  * @param data Pointer to buffer where the sts response will be stored
@@ -99,4 +113,9 @@ int sitec_lp_sts_c(struct device *dev);
  * @return Return 0 if everything works fine, else return an error code.
  */
 int sitec_lp_sts_u(struct device *dev);
-#endif // SITEC_STS_H
+
+/**
+ *
+ */
+int sitec_lp_sts_p(struct device *dev, struct sts_msg *rx_msg);
+#endif  // SITEC_STS_H

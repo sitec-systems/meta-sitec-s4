@@ -31,7 +31,7 @@
 #include "sitec_lp.h"
 #include "sts_fm.h"
 
-#define SITEC_LP_VERSION "1.0.0"
+#define SITEC_LP_VERSION "1.0.1"
 
 struct sitec_lp_priv *priv;
 
@@ -147,6 +147,32 @@ static ssize_t sitec_lp_version_show(struct device *dev, struct device_attribute
 }
 static DEVICE_ATTR(version, S_IRUGO, sitec_lp_version_show, NULL);
 
+static ssize_t sitec_lp_freq_show(struct device *dev, struct device_attribute *attr, char *buf)
+{
+    struct sts_msg rx_msg;
+    int err;
+    int wbytes;
+    int i;
+    ssize_t count = 0;
+
+    err = sitec_lp_sts_p(dev, &rx_msg);
+    if (err) {
+        return err;
+    }
+
+    for (i = 0; i < rx_msg.len; i++) {
+        wbytes = sprintf(buf, "{%02x}", rx_msg.data[i]);
+        buf += wbytes;
+        count += wbytes;
+    }
+
+    wbytes = sprintf(buf, "\n");
+    count += wbytes;
+
+    return count;
+}
+static DEVICE_ATTR(freq, S_IRUGO, sitec_lp_freq_show, NULL);
+
 static struct attribute *sitec_lp_attributes[] = {
 	&dev_attr_version.attr,
 	&dev_attr_sts_c_test.attr,
@@ -154,6 +180,7 @@ static struct attribute *sitec_lp_attributes[] = {
 	&dev_attr_sts_i_test.attr,
 	&dev_attr_fm_c_test.attr,
 	&dev_attr_fm_g_test.attr,
+	&dev_attr_freq.attr,
 	NULL,
 };
 
@@ -269,8 +296,6 @@ static int sitec_lp_probe(struct spi_device *client)
 
 exit_irq:
 	gpio_free(priv->irq);
-
-exit_gpio:
 	gpio_free(priv->gpio);
 
 exit_free:
