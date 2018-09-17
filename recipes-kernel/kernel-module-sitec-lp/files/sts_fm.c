@@ -38,14 +38,6 @@ static void sitec_lp_sts_crc(u8 *data, size_t len) {
     data[len - 1] = ~crc;
 }
 
-static int sitec_lp_is_char_ascii(char c) {
-    if (c >= 0x21 && c <= 0x7e) {
-        return 0;
-    }
-
-    return 1;
-}
-
 static int sitec_lp_spi_recv(struct device *dev, u8 *data, size_t len,
                              long delay) {
     struct sitec_lp_priv *d = dev_get_drvdata(dev);
@@ -125,7 +117,7 @@ static size_t build_complete_msg(struct sts_msg *msg, u8 *data) {
 
 static int sts_send_msg(struct device *dev, struct sts_msg *msg) {
     u8 buf[MSG_MAXSIZE];
-    u8 outbuf[1024];
+    u8 outbuf[MSG_MAXSIZE];
     u8 *outbuf_ptr = &outbuf[0];
     int wbytes;
     int i = 0;
@@ -136,9 +128,75 @@ static int sts_send_msg(struct device *dev, struct sts_msg *msg) {
         wbytes = sprintf(outbuf_ptr, "{%02x}", buf[i]);
         outbuf_ptr += wbytes;
     }
+#ifdef DEBUG
     dev_info(dev, "SEND: %s", outbuf);
+#endif
 
     return sitec_lp_spi_send(dev, buf, len, 50);
+}
+
+static int sts_parse_header(struct device *dev, u8 *data, struct sts_header *header) {
+    if (data[0] != '#' || data[1] != 'S' || data[2] != 'T' || data[3] != 'S') {
+        return -EINVAL;
+    }
+
+    header->len = data[IND_LEN];
+    header->fg_id = data[IND_FG_ID];
+    header->version = data[IND_VERSION];
+
+    return 0;
+}
+
+static void sts_fill_msg_header(struct sts_msg *msg, struct sts_header *header) {
+    msg->fg_id = header->fg_id;
+    msg->version = header->version;
+    msg->len = header->len;
+}
+
+static void sts_fill_msg_data(struct sts_msg *msg, u8 *data) {
+    int i = 0;
+
+    for (i = 0; i < msg->len - 2; i++) {
+        msg->data[i] = data[i];
+    }
+}
+
+static int sts_recv_msg(struct device *dev, struct sts_msg *msg) {
+    int ret = 0;
+    u8 buf_header[10];
+    u8 data[DATA_MAXSIZE + 1];
+    struct sts_header header;
+
+    // recv header
+    ret = sitec_lp_spi_recv(dev, buf_header, 9, 50); 
+    if (ret < 0) {
+        return ret;
+    }
+
+    ret = sts_parse_header(dev, buf_header, &header);
+    if (ret < 0) {
+        return ret;
+    }
+
+    sts_fill_msg_header(msg, &header);
+
+    if (header.len == 2) {
+        return 0;
+    }
+
+    // recv data plus cr
+    // data length is header->len = datacount + 2 so the length to read is header->len -2
+    // but you altough want to read the crc so you need to add 1. the result is you need to
+    // read header->len - 1 bytes
+    ret = sitec_lp_spi_recv(dev, data, header.len - 1, 50);
+    if (ret < 0) {
+        return ret;
+    }
+
+    sts_fill_msg_data(msg, data);
+
+    msg->crc = data[header.len - 1];
+    return 0;
 }
 
 int sitec_lp_sts_send(struct device *dev, u8 *data, size_t len) {
@@ -180,11 +238,8 @@ exit_fm_recv:
 }
 EXPORT_SYMBOL_GPL(sitec_lp_fm_recv);
 
-int sitec_lp_sts_i(struct device *dev) {
-    u8 rx_buf[128];
+int sitec_lp_sts_i(struct device *dev, struct sts_msg *rx_msg) {
     int err;
-    int i = 0;
-
     struct sts_msg i_msg;
     i_msg.fg_id = 'I';
     i_msg.version = 0x10;
@@ -197,16 +252,12 @@ int sitec_lp_sts_i(struct device *dev) {
         return err;
     }
 
-    dev_info(dev, "Recv answer\n");
-    err = sitec_lp_sts_recv(dev, rx_buf, ARRAY_SIZE(rx_buf));
-    if (err) {
-        dev_info(dev, "Can't recv something\n");
-        return err;
-    }
+    mdelay(10);
 
-    for (i = 0; i < 20; i++) {
-        dev_info(dev, "Recv: 0x%02x\n", rx_buf[i]);
-    }
+    err = sts_recv_msg(dev, rx_msg);
+    if (err < 0) {
+        return err;
+    };
 
     return 0;
 }
@@ -249,11 +300,8 @@ int sitec_lp_sts_u(struct device *dev) {
 }
 EXPORT_SYMBOL_GPL(sitec_lp_sts_u);
 
-int sitec_lp_sts_p(struct device *dev, struct sts_msg *rx_msg) {
+int sitec_lp_sts_p(struct device *dev, const char cmd, struct sts_msg *rx_msg) {
     int err;
-    int i = 0;
-    u8 rx_buf[32];
-
     struct sts_msg tx_msg;
     tx_msg.fg_id = 'P';
     tx_msg.version = 0x10;
@@ -267,17 +315,10 @@ int sitec_lp_sts_p(struct device *dev, struct sts_msg *rx_msg) {
 
     mdelay(10);
 
-    err = sitec_lp_sts_recv(dev, rx_buf, ARRAY_SIZE(rx_buf));
+    err = sts_recv_msg(dev, rx_msg);
     if (err) {
         return err;
     }
-
-    for (i = 0; i < 30; i++) {
-        rx_msg->data[i] = rx_buf[i];
-    }
-
-    rx_msg->fg_id = 'P';
-    rx_msg->len = 30;
 
     return 0;
 }

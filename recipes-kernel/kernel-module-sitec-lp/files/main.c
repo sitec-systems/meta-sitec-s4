@@ -15,8 +15,6 @@
  * along with this library; if not, write to the Free Software Foundation,
  * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110, USA
  */
-#define DEBUG
-
 #include <linux/module.h>
 #include <linux/spi/spi.h>
 #include <linux/device.h>
@@ -34,21 +32,6 @@
 #define SITEC_LP_VERSION "1.0.1"
 
 struct sitec_lp_priv *priv;
-
-static ssize_t sitec_lp_sts_i_test_store(struct device *dev, struct device_attribute *attr,
-	const char *buf, size_t count)
-{
-	int err;
-
-	err = sitec_lp_sts_i(dev);
-	if (err) {
-		dev_err(dev, "Can't send STS I Command (err = %d)\n", err);
-		return err;
-	}
-	return count;
-}
-
-static DEVICE_ATTR(sts_i_test, S_IWUSR, NULL, sitec_lp_sts_i_test_store);
 
 static ssize_t sitec_lp_sts_u_test_store(struct device *dev, struct device_attribute *attr,
 	 const char *buf, size_t count)
@@ -151,36 +134,76 @@ static ssize_t sitec_lp_freq_show(struct device *dev, struct device_attribute *a
 {
     struct sts_msg rx_msg;
     int err;
-    int wbytes;
-    int i;
-    ssize_t count = 0;
+    u16 freq_di1;
+    u16 freq_di2;
+    u16 freq_di3;
 
-    err = sitec_lp_sts_p(dev, &rx_msg);
+    err = sitec_lp_sts_p(dev, '?', &rx_msg);
     if (err) {
         return err;
     }
 
-    for (i = 0; i < rx_msg.len; i++) {
-        wbytes = sprintf(buf, "{%02x}", rx_msg.data[i]);
+    if (rx_msg.len < 9) {
+        dev_err(dev, "Incorrect response");
+        return -EIO;
+    }
+
+    freq_di1 = rx_msg.data[3] << 8;
+    freq_di1 = freq_di1 | rx_msg.data[4];
+    freq_di2 = rx_msg.data[5] << 8;
+    freq_di2 = freq_di2 | rx_msg.data[6];
+    freq_di3 = rx_msg.data[7] << 8;
+    freq_di3 = freq_di3 | rx_msg.data[8];
+
+    return sprintf(buf, "%d-%d-%d", freq_di1, freq_di2, freq_di3);
+}
+static DEVICE_ATTR(freq, S_IRUGO, sitec_lp_freq_show, NULL);
+
+static ssize_t sitec_lp_fw_version_show(struct device *dev, struct device_attribute *attr,
+        char *buf) {
+    struct sts_msg rx_msg;
+    char version[31];
+    int ret;
+    int i;
+    int wbytes = 0;
+    int count = 0;
+
+    ret = sitec_lp_sts_i(dev, &rx_msg);
+    if (ret < 0) {
+        return ret;
+    }
+#ifdef DEBUG
+    for (i = 0; i < rx_msg.len - 2; i++) {
+        wbytes = sprintf(buf, "{0x%02x}", rx_msg.data[i]);
         buf += wbytes;
         count += wbytes;
     }
 
-    wbytes = sprintf(buf, "\n");
-    count += wbytes;
-
     return count;
+#else //DEBUG
+    rx_msg.data[30] = 0;
+    for (i = 0; i < rx_msg.len - 2 ; i++) {
+        if (rx_msg.data[i] == 0x0d) {
+            sprintf(buf, "%c", '\n');
+        } else {
+            sprintf(buf, "%c", rx_msg.data[i]);
+        }
+        buf++;
+    }
+
+    return rx_msg.len - 2;
+#endif
 }
-static DEVICE_ATTR(freq, S_IRUGO, sitec_lp_freq_show, NULL);
+static DEVICE_ATTR(fw_version, S_IRUGO, sitec_lp_fw_version_show, NULL);
 
 static struct attribute *sitec_lp_attributes[] = {
 	&dev_attr_version.attr,
 	&dev_attr_sts_c_test.attr,
 	&dev_attr_sts_u_test.attr,
-	&dev_attr_sts_i_test.attr,
 	&dev_attr_fm_c_test.attr,
 	&dev_attr_fm_g_test.attr,
 	&dev_attr_freq.attr,
+	&dev_attr_fw_version.attr,
 	NULL,
 };
 
@@ -201,7 +224,7 @@ static void sitec_lp_halt(void)
 static int sitec_lp_notify_sys(struct notifier_block *this, unsigned long code,
 	void *unused)
 {
-	dev_info(priv->dev, "Recv reboot code 0x%x\n", code);
+	dev_info(priv->dev, "Recv reboot code 0x%x\n", (u32) code);
 	switch(code) {
 	case SYS_RESTART:
 		dev_dbg(priv->dev, "Catch down event\n");

@@ -30,12 +30,23 @@
 
 #define DATA_MAXSIZE 245
 #define MSG_MAXSIZE 256
+#define STS_MIN_SIZE 10
+#define IND_LEN 6
+#define IND_FG_ID 7
+#define IND_VERSION 8
 
 struct sts_msg {
     u8 data[DATA_MAXSIZE]; // msg
     u8 fg_id; // function group id
     u8 version; // version of sts command
     u8 len; // length of the sts data + 2
+    u8 crc; // checksum of crc frame
+};
+
+struct sts_header {
+    u8 fg_id;
+    u8 version;
+    u8 len;
 };
 
 /**
@@ -94,9 +105,10 @@ int sitec_lp_fm_recv(struct device *dev, u8 *buf, size_t len);
  * @brief Sends a sts I message.
  *
  * @param dev Pointer to global device structure
+ * @rx_msg structure to fill for the received sts message
  * @return Return 0 if everything works fine, else return an error code.
  */
-int sitec_lp_sts_i(struct device *dev);
+int sitec_lp_sts_i(struct device *dev, struct sts_msg *rx_msg);
 
 /**
  * @brief Sends a sts C message.
@@ -115,7 +127,12 @@ int sitec_lp_sts_c(struct device *dev);
 int sitec_lp_sts_u(struct device *dev);
 
 /**
+ * @brief Sends a sts P message
  *
+ * @param dev Pointer to global device structure
+ * @cmd character with the corresponding command for the P message
+ * @rx_msg structure to fill for the received sts message
+ * @return Return 0 if everything works fine, else return an error code.
  */
-int sitec_lp_sts_p(struct device *dev, struct sts_msg *rx_msg);
+int sitec_lp_sts_p(struct device *dev, const char cmd, struct sts_msg *rx_msg);
 #endif  // SITEC_STS_H
