@@ -235,6 +235,10 @@ static int sitec_lp_probe(struct spi_device *client)
 
 	dev_info(&client->dev, "Initialize low power routine ...\n");
 
+	client->mode = SPI_MODE_1;
+	dev_info(&client->dev, "Current mode settings 0x%x", client->mode);
+	dev_info(&client->dev, "Default byte size %d", client->bits_per_word);
+
 	err = spi_setup(client);
 	if (err < 0) {
 		dev_err(&client->dev, "Can't setup SPI interface\n");

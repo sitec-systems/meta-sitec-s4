@@ -62,7 +62,7 @@ static int sitec_lp_spi_recv(struct device *dev, u8 *data, size_t len,
 		dev_info(dev, "Read SPI Byte [%d] [0x%02x]\n", i, buf);
 #endif
         data[i] = buf;
-        mdelay(delay);
+        udelay(delay);
     }
 
     return 0;
@@ -84,7 +84,7 @@ static int sitec_lp_spi_send(struct device *dev, u8 *data, size_t len,
         if (err) {
             return err;
         }
-        mdelay(delay);
+        udelay(delay);
     }
 
     return 0;
@@ -138,16 +138,16 @@ static int sts_send_msg(struct device *dev, struct sts_msg *msg) {
     }
     dev_info(dev, "SEND: %s", outbuf);
 
-    return sitec_lp_spi_send(dev, buf, len, 1);
+    return sitec_lp_spi_send(dev, buf, len, 50);
 }
 
 int sitec_lp_sts_send(struct device *dev, u8 *data, size_t len) {
-    return sitec_lp_spi_send(dev, data, len, 1);
+    return sitec_lp_spi_send(dev, data, len, 50);
 }
 EXPORT_SYMBOL_GPL(sitec_lp_sts_send);
 
 int sitec_lp_sts_recv(struct device *dev, u8 *data, size_t len) {
-    return sitec_lp_spi_recv(dev, data, len, 1);
+    return sitec_lp_spi_recv(dev, data, len, 50);
 }
 EXPORT_SYMBOL_GPL(sitec_lp_sts_recv);
 
@@ -252,7 +252,7 @@ EXPORT_SYMBOL_GPL(sitec_lp_sts_u);
 int sitec_lp_sts_p(struct device *dev, struct sts_msg *rx_msg) {
     int err;
     int i = 0;
-    u8 rx_buf[128];
+    u8 rx_buf[32];
 
     struct sts_msg tx_msg;
     tx_msg.fg_id = 'P';
