@@ -28,6 +28,8 @@
 #include <linux/device.h>
 #include <linux/slab.h>
 
+#include "sitec_lp.h"
+
 #define DATA_MAXSIZE 245
 #define MSG_MAXSIZE 256
 #define STS_MIN_SIZE 10
@@ -37,10 +39,10 @@
 
 struct sts_msg {
     u8 data[DATA_MAXSIZE]; // msg
-    u8 fg_id; // function group id
-    u8 version; // version of sts command
-    u8 len; // length of the sts data + 2
-    u8 crc; // checksum of crc frame
+    u8 fg_id;              // function group id
+    u8 version;            // version of sts command
+    u8 len;                // length of the sts data + 2
+    u8 crc;                // checksum of crc frame
 };
 
 struct sts_header {
@@ -119,6 +121,15 @@ int sitec_lp_sts_i(struct device *dev, struct sts_msg *rx_msg);
 int sitec_lp_sts_c(struct device *dev);
 
 /**
+ * @brief Sends a sts C message with additional wakeup configuration
+ *
+ * @param dev pointer to global device structure
+ * @param config pointer to wakeup structure
+ * @return return 0 if everything works fine, else return an error code
+ */
+int sitec_lp_sts_c_wakeup(struct device *dev, struct wakeup_config *config);
+
+/**
  * @brief Sends a sts G message.
  *
  * @param dev Pointer to global device structure
@@ -135,4 +146,4 @@ int sitec_lp_sts_u(struct device *dev);
  * @return Return 0 if everything works fine, else return an error code.
  */
 int sitec_lp_sts_p(struct device *dev, const char cmd, struct sts_msg *rx_msg);
-#endif  // SITEC_STS_H
+#endif // SITEC_STS_H

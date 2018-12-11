@@ -25,6 +25,7 @@
 #include <linux/notifier.h>
 #include <linux/reboot.h>
 #include <linux/delay.h>
+#include <linux/mutex.h>
 
 #include "sitec_lp.h"
 #include "sts_fm.h"
@@ -124,6 +125,47 @@ static ssize_t sitec_lp_sts_c_test_store(struct device *dev, struct device_attri
 
 static DEVICE_ATTR(sts_c_test, S_IWUSR, NULL, sitec_lp_sts_c_test_store);
 
+static ssize_t sitec_lp_wakeup_config_store(struct device *dev, struct device_attribute *attr,
+	const char *buf, size_t count)
+{
+	u64 result = 0;
+	int err;
+	u8 temp[3];
+	u8 len = 0;
+	int i;
+
+	err = kstrtoul(buf, 0, &result);
+	if (err) {
+		return err;
+	}
+
+	if (result <= 0xff && result > 0 ) {
+		len = 1;
+	} else if (result <= 0xffff && result > 0) {
+		len = 2;
+	} else if (result <= 0xffffff && result > 0) {
+		len = 3;
+	} else {
+		len = 0;
+	}
+
+	temp[0] = result & 0xff;
+	temp[1] = (result >> 8) & 0xff;
+	temp[2] = (result >> 16) & 0xff;
+
+	mutex_lock(&priv->lock);
+	for (i = 0; i < len; i++) {
+		priv->wakeup.data[i] = temp[i];
+	}
+	priv->wakeup.len = len;
+
+	mutex_unlock(&priv->lock);
+
+	return  count;
+}
+
+static DEVICE_ATTR(wakeup_config, S_IWUSR, NULL, sitec_lp_wakeup_config_store);
+
 static ssize_t sitec_lp_version_show(struct device *dev, struct device_attribute *attr, char *buf)
 {
 	return sprintf(buf, "Version: %s\n", SITEC_LP_VERSION);
@@ -198,6 +240,7 @@ static DEVICE_ATTR(fw_version, S_IRUGO, sitec_lp_fw_version_show, NULL);
 
 static struct attribute *sitec_lp_attributes[] = {
 	&dev_attr_version.attr,
+	&dev_attr_wakeup_config.attr,
 	&dev_attr_sts_c_test.attr,
 	&dev_attr_sts_u_test.attr,
 	&dev_attr_fm_c_test.attr,
@@ -218,7 +261,13 @@ static void sitec_lp_restart(void)
 
 static void sitec_lp_halt(void)
 {
-	sitec_lp_sts_c(priv->dev);
+	if (priv->wakeup.len == 0) {
+		dev_info(priv->dev, "Normal shutdown");
+		sitec_lp_sts_c(priv->dev);	
+	} else {
+		dev_info(priv->dev, "Shutdown with mask");
+		sitec_lp_sts_c_wakeup(priv->dev, &priv->wakeup);
+	}
 }
 
 static int sitec_lp_notify_sys(struct notifier_block *this, unsigned long code,
@@ -258,10 +307,6 @@ static int sitec_lp_probe(struct spi_device *client)
 
 	dev_info(&client->dev, "Initialize low power routine ...\n");
 
-	client->mode = SPI_MODE_1;
-	dev_info(&client->dev, "Current mode settings 0x%x", client->mode);
-	dev_info(&client->dev, "Default byte size %d", client->bits_per_word);
-
 	err = spi_setup(client);
 	if (err < 0) {
 		dev_err(&client->dev, "Can't setup SPI interface\n");
@@ -278,6 +323,9 @@ static int sitec_lp_probe(struct spi_device *client)
 	dev_set_drvdata(&client->dev, priv);
 	priv->dev = &client->dev;
 	priv->spi = client;
+	priv->wakeup.len = 0;
+
+	mutex_init(&priv->lock);
 
 	np = priv->dev->of_node;
 	if (!np) {

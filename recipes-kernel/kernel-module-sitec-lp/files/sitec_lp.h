@@ -19,11 +19,21 @@
 #ifndef SITEC_LP_H
 #define SITEC_LP_H
 
-struct sitec_lp_priv {
-	struct device *dev;
-	struct spi_device *spi;
-	int gpio;
-	int irq;
+#include <linux/mutex.h>
+
+struct wakeup_config {
+    u8 data[3];
+    u8 len;
 };
+
+struct sitec_lp_priv {
+    struct device *dev;
+    struct spi_device *spi;
+    struct wakeup_config wakeup;
+    struct mutex lock;
+    int gpio;
+    int irq;
+};
+
 
 #endif // SITEC_LP_H

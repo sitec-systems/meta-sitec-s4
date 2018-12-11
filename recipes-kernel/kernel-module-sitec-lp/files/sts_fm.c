@@ -281,6 +281,30 @@ int sitec_lp_sts_c(struct device *dev) {
 }
 EXPORT_SYMBOL_GPL(sitec_lp_sts_c);
 
+int sitec_lp_sts_c_wakeup(struct device *dev, struct wakeup_config *config) {
+    int err;
+    int i;
+    struct sts_msg cmsg;
+
+    cmsg.fg_id = 'C';
+    cmsg.version = 0x10;
+    cmsg.data[0] = 'N';
+    cmsg.data[1] = '1';
+    cmsg.len = 2 + config->len;
+
+    for (i = 0; i < config->len; i++) {
+        cmsg.data[2 + i] = config->data[i];
+    }
+
+    err = sts_send_msg(dev, &cmsg);
+    if (err) {
+        return err;
+    }
+
+    return 0;
+}
+EXPORT_SYMBOL_GPL(sitec_lp_sts_c_wakeup);
+
 int sitec_lp_sts_u(struct device *dev) {
     int err;
     u8 fm_frame[] = {'#', 'S', 'T', 'S', 0x01, 0xFE, 0x02, 'U', 0x10, 0x00};
