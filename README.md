@@ -1,7 +1,7 @@
 # meta-sitec-s4
 
 This project contains the sources to build the board support package (BSP) for
-the (S4)[www.sitec-systems.de/der-telematik-spezialist/produkte/s4-commpro-x.html].
+the [S4](www.sitec-systems.de/der-telematik-spezialist/produkte/s4-commpro-x.html).
 
 ## Build
 
