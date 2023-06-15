@@ -1,0 +1,25 @@
+From fdbd7c8a87bb6015863b7c3493edf12926bff463 Mon Sep 17 00:00:00 2001
+From: Robert Lehmann <robert.lehmann@sitec-systems.de>
+Date: Fri, 28 Oct 2016 07:23:14 +0000
+Subject: [PATCH 1016/1018] mach-imx: gpio_label: Add label for kill_4P
+
+Ticket #1494
+---
+ arch/arm/mach-imx/gpio_label.h | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/arch/arm/mach-imx/gpio_label.h b/arch/arm/mach-imx/gpio_label.h
+index 4f6ecd5..cb552f0 100644
+--- a/arch/arm/mach-imx/gpio_label.h
++++ b/arch/arm/mach-imx/gpio_label.h
+@@ -17,6 +17,7 @@
+ #define K_L_PU_E 	"k_l_pu_e"
+ #define K_L_PU_HALF	"k_l_pu_half"
+ #define LAN_PWR_E   "lan_pwr_e"
++#define KILL_4P     "kill_4P"
+ 
+ #define DI2			"di2"
+ #define DI3			"di3"
+-- 
+2.1.4
+

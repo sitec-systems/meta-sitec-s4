@@ -1,0 +1,184 @@
+From a772a6304c50aa971865418c66cc4703890dcfd4 Mon Sep 17 00:00:00 2001
+From: Robert Lehmann <robert.lehmann@sitec-systems.de>
+Date: Thu, 2 Mar 2017 10:01:59 +0000
+Subject: [PATCH 1023/1023] mach-imx6sx: Change init routine of GPIOs for S4
+ hardware
+
+The hardware revision A1 changes some GPIOs and add some new ones. The effects
+the init routine of the board.
+
+Ticket #1668
+---
+ arch/arm/mach-imx/mach-imx6sx.c | 126 ++++++++++++++++++++++++++--------------
+ 1 file changed, 81 insertions(+), 45 deletions(-)
+
+diff --git a/arch/arm/mach-imx/mach-imx6sx.c b/arch/arm/mach-imx/mach-imx6sx.c
+index f3c390e..7de0827 100644
+--- a/arch/arm/mach-imx/mach-imx6sx.c
++++ b/arch/arm/mach-imx/mach-imx6sx.c
+@@ -1,5 +1,6 @@
+ /*
+  * Copyright 2014-2015 Freescale Semiconductor, Inc.
++ * Copyright 2017 sitec systems GmbH
+  *
+  * This program is free software; you can redistribute it and/or modify
+  * it under the terms of the GNU General Public License version 2 as
+@@ -133,75 +134,110 @@ static void imx6sx_gpio_setup_score(void)
+     gpio_request_export(SCORE_CAN2_TERM, GPIOF_OUT_INIT_LOW, CAN2_TERM);
+ }
+ 
+-#define S4_WIFI_PWR_E IMX_GPIO_NR(3, 10)
+-#define S4_GSM_PWR_E IMX_GPIO_NR(4, 24)
+-#define S4_SIM_SEL IMX_GPIO_NR(4, 25)
+-#define S4_LAN_PWR_E IMX_GPIO_NR(4, 30)
+-#define S4_GNSS_PWR_E 502
+-#define S4_DI2 IMX_GPIO_NR(3, 0)
+-#define S4_DI3 IMX_GPIO_NR(3, 8)
+-#define S4_KILL_4P IMX_GPIO_NR(3, 11)
+-#define S4_DI_K15 IMX_GPIO_NR(3, 25)
+-#define S4_DI_K30 IMX_GPIO_NR(3, 18)
++#define S4_TEMP_IRQ IMX_GPIO_NR(1, 8)
++#define S4_ACC_IRQ IMX_GPIO_NR(1, 9)
++#define S4_FC_IRQ IMX_GPIO_NR(1, 2)
++#define S4_PWR_ALERT IMX_GPIO_NR(1, 0)
++#define S4_I2C_IRQ IMX_GPIO_NR(1, 1)
++#define S4_CAN2_WAKE IMX_GPIO_NR(1, 3)
++#define S4_GSM_RI IMX_GPIO_NR(2, 15)
++#define S4_LIN_E IMX_GPIO_NR(2, 10)
++#define S4_DI_K30 IMX_GPIO_NR(2, 12)
++#define S4_DI1 IMX_GPIO_NR(3, 24)
++#define S4_DI2 IMX_GPIO_NR(3, 21)
++#define S4_DI3 IMX_GPIO_NR(3, 16)
++#define S4_DO_IRQ IMX_GPIO_NR(3, 27)
++#define S4_DI_K15 IMX_GPIO_NR(3, 26)
++#define S4_GSM_E_RST IMX_GPIO_NR(3, 9)
++#define S4_GSM_IGN IMX_GPIO_NR(3, 1)
++#define S4_HOST2BT IMX_GPIO_NR(3, 11)
++#define S4_HOST2WL IMX_GPIO_NR(3, 10)
++#define S4_OTG_DRVBUS IMX_GPIO_NR(1, 13)
++#define S4_SIM_SEL IMX_GPIO_NR(1, 11)
++#define S4_KILL_4P IMX_GPIO_NR(3, 18)
+ #define S4_K_L_PU_E IMX_GPIO_NR(7, 9)
+ #define S4_K_L_HALF IMX_GPIO_NR(7, 8)
+-#define S4_DO1_OUT 496
+-#define S4_DO1_STATE 497
+-#define S4_DO2_OUT 499
+-#define S4_DO2_STATE 498
+-#define S4_DO3_OUT 501
+-#define S4_DO3_STATE 500
+-#define S4_CAN1_TERM 505
+-#define S4_CAN1_STBY 504
+-#define S4_5P_E 510
+-#define S4_5P_GOOD 511
+-#define S4_GSM_RI IMX_GPIO_NR(3, 26)
+-#define S4_PWR_ALERT IMX_GPIO_NR(3, 28)
+-#define S4_FC_IRQ IMX_GPIO_NR(3, 27)
+-#define S4_I2C_IRQ IMX_GPIO_NR(3, 9)
+-#define S4_ACC_IRQ IMX_GPIO_NR(3, 16)
+-#define S4_CHRG_IRQ IMX_GPIO_NR(3, 17)
+-#define S4_TEMP_IRQ IMX_GPIO_NR(3, 23)
+ #define S4_BUZZER IMX_GPIO_NR(1, 12)
+ static void imx6sx_gpio_setup_s4_native(void)
+ {
+ 	pr_info("S4: Doing GPIO native init\n");
+-	gpio_request_export(S4_WIFI_PWR_E, GPIOF_OUT_INIT_HIGH, WIFI_PWR_E);
+-	gpio_request_export(S4_GSM_PWR_E, GPIOF_OUT_INIT_LOW, GSM_PWR_E);
+-	gpio_request_export(S4_SIM_SEL, GPIOF_OUT_INIT_LOW, SIM_SEL);
++	gpio_request_export(S4_TEMP_IRQ, GPIOF_IN, TEMP_IRQ);
++	gpio_request_export(S4_ACC_IRQ, GPIOF_IN, ACC_IRQ);
++	gpio_request_export(S4_FC_IRQ, GPIOF_IN, FC_IRQ);
++	gpio_request_export(S4_PWR_ALERT, GPIOF_IN, PWR_ALERT);
++	gpio_request_export(S4_I2C_IRQ, GPIOF_IN, I2C_IRQ);
++	gpio_request_export(S4_CAN2_WAKE, GPIOF_IN, CAN2_WAKE);
++	gpio_request_export(S4_GSM_RI, GPIOF_IN, GSM_RI);
++	gpio_request_export(S4_LIN_E, GPIOF_OUT_INIT_LOW, LIN_E);
++	gpio_request_export(S4_DI1, GPIOF_IN, DI1);
+ 	gpio_request_export(S4_DI2, GPIOF_IN, DI2);
+ 	gpio_request_export(S4_DI3, GPIOF_IN, DI3);
++	gpio_request_export(S4_DO_IRQ, GPIOF_IN, DO_IRQ);
+ 	gpio_request_export(S4_DI_K15, GPIOF_IN, DI_K15);
+-	gpio_request_export(S4_DI_K30, GPIOF_IN, DI_K30);
++	gpio_request_export(S4_GSM_E_RST, GPIOF_OUT_INIT_LOW, GSM_E_RST);
++	gpio_request_export(S4_GSM_IGN, GPIOF_OUT_INIT_LOW, GSM_IGN);
++	gpio_request_export(S4_HOST2BT, GPIOF_IN, HOST2BT);
++	gpio_request_export(S4_HOST2WL, GPIOF_IN, HOST2WL);
++	gpio_request_export(S4_SIM_SEL, GPIOF_OUT_INIT_LOW, SIM_SEL);
+ 	gpio_request_export(S4_K_L_PU_E, GPIOF_OUT_INIT_LOW, K_L_PU_E);
+ 	gpio_request_export(S4_K_L_HALF, GPIOF_OUT_INIT_LOW, K_L_PU_HALF);
+-	gpio_request_export(S4_LAN_PWR_E, GPIOF_OUT_INIT_HIGH, LAN_PWR_E);
+ 	gpio_request_export(S4_KILL_4P, GPIOF_OUT_INIT_LOW, KILL_4P);
+-	gpio_request_export(S4_GSM_RI, GPIOF_IN, GSM_RI);
+-	gpio_request_export(S4_PWR_ALERT, GPIOF_IN, PWR_ALERT);
+-	gpio_request_export(S4_FC_IRQ, GPIOF_IN, FC_IRQ);
+-	gpio_request_export(S4_I2C_IRQ, GPIOF_IN, I2C_IRQ);
+-	gpio_request_export(S4_ACC_IRQ, GPIOF_IN, ACC_IRQ);
+-	gpio_request_export(S4_CHRG_IRQ, GPIOF_IN, CHRG_IRQ);
+-	gpio_request_export(S4_TEMP_IRQ, GPIOF_IN, TEMP_IRQ);
+ 	gpio_request_export(S4_BUZZER, GPIOF_OUT_INIT_LOW, BUZZER);
+ 	pr_info("S4: Finished GPIO native init\n");
+ }
+-
++/*
++ * Port Expander Port Mapping
++ *   IO0_0 : LAN_PWR_E
++ *   IO0_1 : IO3 - 5P_EXT_E
++ *   IO0_2 : IO1 - CAN2_E - no export
++ *   IO0_3 : IO4 - 5P_ISO_E
++ *   IO0_4 : IO0 - CAN1_TERM
++ *   IO0_5 : IO5 - 
++ *   IO0_6 : IO2 - CAN2_TERM
++ *   IO0_7 : DO1_OUT
++ *   
++ *   IO1_0 : DO1_STATE
++ *   IO1_1 : DO2_STATE
++ *   IO1_2 : DO2_OUT
++ *   IO1_3 : DO3_OUT
++ *   IO1_4 : DO3_STATE
++ *   IO1_5 : GNSS_PWR_E
++ *   IO1_6 : GSM_PWR_E
++ *   IO1_7 : WLAN_PWR_E
++ */
++#define S4_LAN_PWR_E 496
++#define S4_5P_EXT_E 497
++#define S4_CAN2_E 498
++#define S4_5P_ISO_E 499
++#define S4_CAN1_TERM 500
++// undefined 501
++#define S4_CAN2_TERM 502
++#define S4_DO1_OUT 503
++#define S4_DO1_STATE 504
++#define S4_DO2_STATE 505
++#define S4_DO2_OUT 506
++#define S4_DO3_OUT 507
++#define S4_DO3_STATE 508
++#define S4_GNSS_PWR_E 509
++#define S4_GSM_PWR_E 510
++#define S4_WIFI_PWR_E 511
+ static void imx6sx_gpio_setup_s4_expander(void)
+ {
+ 	pr_info("S4: Doing GPIO expander init\n");
+-	gpio_request_export(S4_GNSS_PWR_E, GPIOF_OUT_INIT_LOW, GNSS_PWR_E);
+-	gpio_request_export(S4_5P_E, GPIOF_OUT_INIT_HIGH, V5P_E);
+-	gpio_request_export(S4_5P_GOOD, GPIOF_IN, V5P_GOOD);
++	gpio_request_export(S4_WIFI_PWR_E, GPIOF_OUT_INIT_HIGH, WIFI_PWR_E);
++	gpio_request_export(S4_LAN_PWR_E, GPIOF_OUT_INIT_HIGH, LAN_PWR_E);
++	gpio_request_export(S4_5P_EXT_E, GPIOF_OUT_INIT_LOW, V5P_EXT_E);
++	gpio_request_export(S4_5P_ISO_E, GPIOF_OUT_INIT_LOW, V5P_ISO_E);
++	gpio_request_export(S4_CAN1_TERM, GPIOF_OUT_INIT_LOW, CAN1_TERM);
++	gpio_request_export(S4_CAN2_TERM, GPIOF_OUT_INIT_LOW, CAN2_TERM);
+ 	gpio_request_export(S4_DO1_OUT, GPIOF_OUT_INIT_LOW, DO1_OUT);
+ 	gpio_request_export(S4_DO1_STATE, GPIOF_IN, DO1_STATE);
+ 	gpio_request_export(S4_DO2_OUT, GPIOF_OUT_INIT_LOW, DO2_OUT);
+ 	gpio_request_export(S4_DO2_STATE, GPIOF_IN, DO2_STATE);
+ 	gpio_request_export(S4_DO3_OUT, GPIOF_OUT_INIT_LOW, DO3_OUT);
+ 	gpio_request_export(S4_DO3_STATE, GPIOF_IN, DO3_STATE);
+-	gpio_request_export(S4_CAN1_TERM, GPIOF_OUT_INIT_LOW, CAN1_TERM);
+-	gpio_request_export(S4_CAN1_STBY, GPIOF_OUT_INIT_LOW, CAN1_STBY);
++	gpio_request_export(S4_GNSS_PWR_E, GPIOF_OUT_INIT_LOW, GNSS_PWR_E);
++	gpio_request_export(S4_GSM_PWR_E, GPIOF_OUT_INIT_LOW, GSM_PWR_E);
+ 	pr_info("S4: Finished GPIO expander init\n");
+ }
+ 
+-- 
+2.1.4
+

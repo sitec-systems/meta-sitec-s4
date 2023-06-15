@@ -1,0 +1,30 @@
+From 04c34541456659f9ca540841b6e49f0602b524b7 Mon Sep 17 00:00:00 2001
+From: Robert Lehmann <robert.lehmann@sitec-systems.de>
+Date: Fri, 22 Dec 2017 09:49:41 +0100
+Subject: [PATCH] imx6sx-s4: Change settings for USB1
+
+Ticket #2175
+---
+ arch/arm/boot/dts/imx6sx-s4.dts | 6 +-----
+ 1 file changed, 1 insertion(+), 5 deletions(-)
+
+diff --git a/arch/arm/boot/dts/imx6sx-s4.dts b/arch/arm/boot/dts/imx6sx-s4.dts
+index 9e8106f..05016d2 100644
+--- a/arch/arm/boot/dts/imx6sx-s4.dts
++++ b/arch/arm/boot/dts/imx6sx-s4.dts
+@@ -96,11 +96,7 @@
+ };
+ 
+ &usbotg1 {
+-	pinctrl-0 = <&pinctrl_usb_otg_id>;
+-	dr_mode = "otg";
+-	srp-disable;
+-	hnp-disable;
+-	adp-disable;
++	dr_mode = "peripheral";
+ 	status = "okay";
+ };
+ 
+-- 
+2.1.4
+

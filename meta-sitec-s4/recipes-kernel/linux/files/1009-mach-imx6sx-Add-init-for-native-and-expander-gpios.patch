@@ -1,0 +1,140 @@
+From 245575bc60222191f325f24b2c91db35b8ce7482 Mon Sep 17 00:00:00 2001
+From: Robert Lehmann <robert.lehmann@sitec-systems.de>
+Date: Mon, 29 Aug 2016 13:54:07 +0200
+Subject: [PATCH 1009/1009] mach-imx6sx: Add init for native and expander gpios
+
+Seperate the init process for the gpios into a native init routine and a
+init routine for the expander gpios. The native IOs can be initialized
+very early in the boot process. The expander GPIOs need the driver for
+the IO-Expander to work properly. These GPIOs are initialized in the
+late init of the machine to be sure that the driver for the IO-Expander
+is loaded.
+
+Ticket #1370
+---
+ arch/arm/mach-imx/gpio_label.h  |  6 ++++--
+ arch/arm/mach-imx/mach-imx6sx.c | 41 ++++++++++++++++++++++++++++-------------
+ 2 files changed, 32 insertions(+), 15 deletions(-)
+
+diff --git a/arch/arm/mach-imx/gpio_label.h b/arch/arm/mach-imx/gpio_label.h
+index 8713a89..c41c7c9 100644
+--- a/arch/arm/mach-imx/gpio_label.h
++++ b/arch/arm/mach-imx/gpio_label.h
+@@ -8,12 +8,14 @@
+ #define CAN1_TERM "can1_term"
+ #define CAN2_TERM "can2_term"
+ 
+-#define V5P_E "5p_e"
+-#define V5P_GOOD "5p_good"
++#define V5P_E 		"5p_e"
++#define V5P_GOOD 	"5p_good"
+ #define WIFI_PWR_E	"wifi_pwr_e"
+ #define GSM_PWR_E	"gsm_pwr_e"
+ #define SIM_SEL		"sim_sel"
+ #define GNSS_PWR_E	"gnss_pwr_e"
++#define K_L_PU_E 	"k_l_pu_e"
++#define K_L_PU_HALF	"k_l_pu_half"
+ 
+ #define DI2			"di2"
+ #define DI3			"di3"
+diff --git a/arch/arm/mach-imx/mach-imx6sx.c b/arch/arm/mach-imx/mach-imx6sx.c
+index a6dd627..377d11b 100644
+--- a/arch/arm/mach-imx/mach-imx6sx.c
++++ b/arch/arm/mach-imx/mach-imx6sx.c
+@@ -111,6 +111,8 @@ static void imx6sx_gpio_setup_score(void)
+ #define S4_DI3 IMX_GPIO_NR(3, 8)
+ #define S4_DI_K15 IMX_GPIO_NR(3, 25)
+ #define S4_DI_K30 IMX_GPIO_NR(3, 18)
++#define S4_K_L_PU_E IMX_GPIO_NR(7, 9)
++#define S4_K_L_HALF IMX_GPIO_NR(7, 8)
+ #define S4_DO1_OUT 496
+ #define S4_DO1_STATE 497
+ #define S4_DO2_OUT 499
+@@ -121,39 +123,51 @@ static void imx6sx_gpio_setup_score(void)
+ #define S4_CAN1_STBY 504
+ #define S4_5P_E 510
+ #define S4_5P_GOOD 511
+-static void imx6sx_gpio_setup_s4(void)
++static void imx6sx_gpio_setup_s4_native(void)
+ {
+-	/* Control GPIOs */
++	pr_info("S4: Doing GPIO native init\n");
+ 	gpio_request_export(S4_WIFI_PWR_E, GPIOF_OUT_INIT_HIGH, WIFI_PWR_E);
+ 	gpio_request_export(S4_GSM_PWR_E, GPIOF_OUT_INIT_LOW, GSM_PWR_E);
+ 	gpio_request_export(S4_SIM_SEL, GPIOF_OUT_INIT_LOW, SIM_SEL);
+-	gpio_request_export(S4_GNSS_PWR_E, GPIOF_OUT_INIT_LOW, GNSS_PWR_E);
+-	gpio_request_export(S4_CAN1_TERM, GPIOF_OUT_INIT_LOW, CAN1_TERM);
+-	gpio_request_export(S4_CAN1_STBY, GPIOF_OUT_INIT_LOW, CAN1_STBY);
+-	gpio_request_export(S4_5P_E, GPIOF_OUT_INIT_LOW, V5P_E);
+-	gpio_request_export(S4_5P_GOOD, GPIOF_IN, V5P_GOOD);
+-
+-	/* Digital Inputs */
+ 	gpio_request_export(S4_DI2, GPIOF_IN, DI2);
+ 	gpio_request_export(S4_DI3, GPIOF_IN, DI3);
+ 	gpio_request_export(S4_DI_K15, GPIOF_IN, DI_K15);
+ 	gpio_request_export(S4_DI_K30, GPIOF_IN, DI_K30);
++	gpio_request_export(S4_K_L_PU_E, GPIOF_OUT_INIT_LOW, K_L_PU_E);
++	gpio_request_export(S4_K_L_HALF, GPIOF_OUT_INIT_LOW, K_L_PU_HALF);
++	pr_info("S4: Finished GPIO native init\n");
++}
+ 
+-	/* Digital Outputs */
++static void imx6sx_gpio_setup_s4_expander(void)
++{
++	pr_info("S4: Doing GPIO expander init\n");
++	gpio_request_export(S4_GNSS_PWR_E, GPIOF_OUT_INIT_LOW, GNSS_PWR_E);
++	gpio_request_export(S4_5P_E, GPIOF_OUT_INIT_HIGH, V5P_E);
++	gpio_request_export(S4_5P_GOOD, GPIOF_IN, V5P_GOOD);
+ 	gpio_request_export(S4_DO1_OUT, GPIOF_OUT_INIT_LOW, DO1_OUT);
+ 	gpio_request_export(S4_DO1_STATE, GPIOF_IN, DO1_STATE);
+ 	gpio_request_export(S4_DO2_OUT, GPIOF_OUT_INIT_LOW, DO2_OUT);
+ 	gpio_request_export(S4_DO2_STATE, GPIOF_IN, DO2_STATE);
+ 	gpio_request_export(S4_DO3_OUT, GPIOF_OUT_INIT_LOW, DO3_OUT);
+ 	gpio_request_export(S4_DO3_STATE, GPIOF_IN, DO3_STATE);
++	gpio_request_export(S4_CAN1_TERM, GPIOF_OUT_INIT_LOW, CAN1_TERM);
++	gpio_request_export(S4_CAN1_STBY, GPIOF_OUT_INIT_LOW, CAN1_STBY);
++	pr_info("S4: Finished GPIO expander init\n");
+ }
+ 
+-static void imx6sx_gpio_init(void)
++static void imx6sx_gpio_native_init(void)
+ {
+     if (of_machine_is_compatible("fsl,imx6sx-score")) {
+         imx6sx_gpio_setup_score();
+ 	} else if (of_machine_is_compatible("fsl,imx6sx-s4")) {
+-		imx6sx_gpio_setup_s4();
++		imx6sx_gpio_setup_s4_native();
++	}
++}
++
++static void imx6sx_gpio_expander_init(void)
++{
++	if (of_machine_is_compatible("fsl,imx6sx-s4")) {
++		imx6sx_gpio_setup_s4_expander();
+ 	}
+ }
+ 
+@@ -170,6 +184,7 @@ static void __init imx6sx_init_machine(void)
+ 	imx6sx_enet_init();
+ 	imx_anatop_init();
+ 	imx6sx_pm_init();
++	imx6sx_gpio_native_init();
+ }
+ 
+ static void __init imx6sx_init_irq(void)
+@@ -183,11 +198,11 @@ static void __init imx6sx_init_irq(void)
+ 
+ static void __init imx6sx_init_late(void)
+ {
++	imx6sx_gpio_expander_init();
+ 	if (IS_ENABLED(CONFIG_ARM_IMX6Q_CPUFREQ))
+ 		platform_device_register_simple("imx6q-cpufreq", -1, NULL, 0);
+ 
+ 	imx6sx_cpuidle_init();
+-	imx6sx_gpio_init();
+ }
+ 
+ static void __init imx6sx_map_io(void)
+-- 
+2.7.4
+

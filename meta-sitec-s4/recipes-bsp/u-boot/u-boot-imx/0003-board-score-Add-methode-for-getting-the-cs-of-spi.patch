@@ -1,0 +1,91 @@
+From f93a09fc0670171984ab9a030740be5c213cf0b9 Mon Sep 17 00:00:00 2001
+From: Robert Lehmann <robert.lehmann@sitec-systems.de>
+Date: Wed, 17 Aug 2016 10:40:04 +0200
+Subject: [PATCH 3/5] board: score: Add methode for getting the cs of spi
+
+The SPI CS is will now received by an extra function of the board
+initialisation file. It checks if the CS and Bus number are known and
+returns the correct GPIO number
+
+This patch although adds the Pin mux for the I2C4 which is connected to
+the PMIC on the S Core
+
+Ticket #1353
+---
+ board/sitec-systems/score/score.c | 32 ++++++++++++++++++++++++++------
+ 1 file changed, 26 insertions(+), 6 deletions(-)
+
+diff --git a/board/sitec-systems/score/score.c b/board/sitec-systems/score/score.c
+index a17c76c..128c066 100644
+--- a/board/sitec-systems/score/score.c
++++ b/board/sitec-systems/score/score.c
+@@ -86,6 +86,19 @@ struct i2c_pads_info i2c_pad_info1 = {
+ 		.gp = IMX_GPIO_NR(1, 1),
+ 	},
+ };
++
++struct i2c_pads_info i2c_pad_info4 = {
++	.scl = {
++		.i2c_mode = MX6_PAD_USB_H_STROBE__I2C4_SCL | PC,
++		.gpio_mode = MX6_PAD_USB_H_STROBE__GPIO7_IO_11 | PC,
++		.gp = IMX_GPIO_NR(7, 11),
++	},
++	.sda = {
++		.i2c_mode = MX6_PAD_USB_H_DATA__I2C4_SDA | PC,
++		.gpio_mode = MX6_PAD_USB_H_DATA__GPIO7_IO_10 | PC,
++		.gp = IMX_GPIO_NR(7, 10),
++	},
++};
+ #endif
+ 
+ int dram_init(void)
+@@ -373,6 +386,7 @@ iomux_v3_cfg_t const ecspi3_pads[] = {
+ 	MX6_PAD_SD4_DATA6__ECSPI3_MISO | MUX_PAD_CTRL(SPI_PAD_CTRL),
+ 	MX6_PAD_SD4_DATA5__ECSPI3_MOSI | MUX_PAD_CTRL(SPI_PAD_CTRL),
+ 	MX6_PAD_SD4_DATA4__ECSPI3_SCLK | MUX_PAD_CTRL(SPI_PAD_CTRL),
++	/* CS PIN */
+ 	MX6_PAD_SD4_CLK__GPIO6_IO_12 | MUX_PAD_CTRL(NO_PAD_CTRL),
+ };
+ 
+@@ -383,6 +397,15 @@ void setup_spinor(void)
+ 	gpio_direction_output(IMX_GPIO_NR(6, 12), 0);
+ }
+ 
++int board_spi_cs_gpio(unsigned bus, unsigned cs)
++{
++#ifdef DEBUG
++	printf("Call %s\n", __FUNCTION__);
++	printf("Using %d bus and %d cs\n", bus, cs);
++#endif /* DEBUG */
++	return (bus == 2 && cs == 2) ? (IMX_GPIO_NR(6, 12)) : -1;
++}
++
+ static iomux_v3_cfg_t const gpio_pads[] = {
+     MX6_PAD_LCD1_DATA18__GPIO3_IO_19 | MUX_PAD_CTRL(NO_PAD_CTRL),
+     MX6_PAD_LCD1_DATA19__GPIO3_IO_20 | MUX_PAD_CTRL(NO_PAD_CTRL),
+@@ -640,19 +663,16 @@ int board_init(void)
+ 
+ #ifdef CONFIG_SYS_I2C_MXC
+ 	setup_i2c(0, CONFIG_SYS_I2C_SPEED, 0x7f, &i2c_pad_info1);
++	setup_i2c(3, CONFIG_SYS_I2C_SPEED, 0x7f, &i2c_pad_info4);
++
+ #endif
+ 
+ 	setup_spinor();
+-#ifdef CONFIG_SYS_USE_SPINOR
+-    printf("Hello World from SPINOR\n");
+-#else
+-    printf("Hello World from SD Card\n");
+-#endif
+ 
+ #ifdef CONFIG_SITEC_S2
+     printf("Hello World from S2\n");
+ #else
+-    printf("Hello World from another device\n");
++    printf("Hello World from S Core\n");
+ #endif
+     setup_gpmi_nand();
+     setup_gpio();
+-- 
+2.7.4
+

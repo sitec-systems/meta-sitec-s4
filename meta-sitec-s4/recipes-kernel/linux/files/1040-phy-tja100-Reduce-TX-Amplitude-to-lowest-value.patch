@@ -1,0 +1,49 @@
+From 344a59d4efcc0167ff2654919a82905faf60b2da Mon Sep 17 00:00:00 2001
+From: Robert Lehmann <robert.lehmann@sitec-systems.de>
+Date: Wed, 30 Oct 2019 09:21:34 +0100
+Subject: [PATCH 1040/1041] phy:tja100: Reduce TX-Amplitude to lowest value
+
+---
+ drivers/net/phy/tja110x.c | 7 +++----
+ drivers/net/phy/tja110x.h | 5 +++++
+ 2 files changed, 8 insertions(+), 4 deletions(-)
+
+diff --git a/drivers/net/phy/tja110x.c b/drivers/net/phy/tja110x.c
+index 0000ade747d..9cdbb887c3d 100755
+--- a/drivers/net/phy/tja110x.c
++++ b/drivers/net/phy/tja110x.c
+@@ -152,12 +152,11 @@ static int nxp_config_init(struct phy_device *phydev)
+ 	switch (phydev->phy_id & NXP_PHY_ID_MASK) {
+ 	case NXP_PHY_ID_TJA1100:
+ 		reg_name = MII_CFG1;
+-		reg_value = TJA1100_CFG1_LED_EN | CFG1_LED_LINKUP | CFG1_RMII_25MHZ_MODE | 
+-            CFG1_MII_DRIVER;
++		reg_value = CFG1_LED_LINKUP | CFG1_RMII_25MHZ_MODE | CFG1_MII_DRIVER | CFG1_TX_500;
+         if (!managed_mode)
+             reg_value |= TJA1100_CFG1_AUTO_OP;
+-		reg_mask = TJA1100_CFG1_AUTO_OP |
+-		    TJA1100_CFG1_LED_EN | TJA1100_CFG1_LED_MODE| CFG1_MII_MODE | CFG1_MII_DRIVER; 
++		reg_mask = TJA1100_CFG1_AUTO_OP | TJA1100_CFG1_LED_EN | TJA1100_CFG1_LED_MODE| 
++            CFG1_MII_MODE | CFG1_MII_DRIVER | CFG1_TX_AMPLITUDE; 
+ 		break;
+ 	case NXP_PHY_ID_TJA1101:
+ 		/* fall through */
+diff --git a/drivers/net/phy/tja110x.h b/drivers/net/phy/tja110x.h
+index a30aa200d63..4dc414e4bae 100644
+--- a/drivers/net/phy/tja110x.h
++++ b/drivers/net/phy/tja110x.h
+@@ -70,6 +70,11 @@
+ #define TJA1100_CFG1_AUTO_OP      BIT(14)
+ #define TJA1102_CFG1_FWDPHYLOC    BIT(14)
+ #define CFG1_LINK_LENGTH          (0x00003000U)
++#define CFG1_TX_AMPLITUDE         (0x00000C00U)
++#define CFG1_TX_500               (0x0000U)
++#define CFG1_TX_750               (0x0400U)
++#define CFG1_TX_1000              (0x0800U)
++#define CFG1_TX_1500              (0x0C00U)
+ #define CFG1_REMWUPHY             BIT(11)
+ #define CFG1_LOCWUPHY             BIT(10)
+ #define CFG1_MII_MODE             (0x00000300U)
+-- 
+2.20.1
+

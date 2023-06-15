@@ -1,0 +1,41 @@
+#!/bin/sh
+
+CONFIG_DIR=/sys/kernel/config
+GADGET=$CONFIG_DIR/usb_gadget/g1
+
+
+start_usb_ether() {
+	
+	mount none $CONFIG_DIR -t configfs
+	mkdir $CONFIG_DIR/usb_gadget/g1
+	echo "0x0525" > $GADGET/idVendor
+	echo "0xa4a2" > $GADGET/idProduct
+	mkdir $GADGET/strings/0x409
+	echo "012345" > $GADGET/strings/0x409/serialnumber
+	echo "sitec systems GmbH" > $GADGET/strings/0x409/manufacturer
+	echo "RNDIS Gadget" > $GADGET/strings/0x409/product
+	mkdir $GADGET/functions/rndis.usb1
+    echo "02:63:da:80:94:8b" > $GADGET/functions/rndis.usb1/dev_addr
+    echo "c2:da:3b:6c:d1:f5" > $GADGET/functions/rndis.usb1/host_addr
+	mkdir $GADGET/configs/c.1
+	mkdir $GADGET/configs/c.1/strings/0x409
+	echo Conf 1 > $GADGET/configs/c.1/strings/0x409/configuration
+	echo 120 > $GADGET/configs/c.1/MaxPower
+	cd $GADGET && ln -s functions/rndis.usb1 configs/c.1
+    echo ci_hdrc.0 > $GADGET/UDC
+}
+
+setup_network_interface() {
+	ifconfig usb0 172.17.40.55 up
+}
+
+case $1 in
+	start)
+		start_usb_ether
+		setup_network_interface
+		;;
+	stop)
+		ifconfig usb0 down
+		;;
+esac
+

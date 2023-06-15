@@ -1,0 +1,42 @@
+From 5140c34da88a8cb653f5818a1921653de5211551 Mon Sep 17 00:00:00 2001
+From: Robert Lehmann <robert.lehmann@sitec-systems.de>
+Date: Tue, 21 Feb 2017 11:29:38 +0100
+Subject: [PATCH] configs: score: Change bootcmd for mfg boot
+
+If the u-boot is loaded via usb (MFG boot) the bootcmd only loads
+a uImage and the corresponding device tree blob. The loaded
+uImage needs to be a combined image which includes the kernel
+and the initrd image.
+
+For that the value of CONFIG_SYS_BOOTM_LEN is increased.
+
+Ticket #1702
+---
+ include/configs/score.h | 4 +++-
+ 1 file changed, 3 insertions(+), 1 deletion(-)
+
+diff --git a/include/configs/score.h b/include/configs/score.h
+index 70302e3..0abaf5b 100644
+--- a/include/configs/score.h
++++ b/include/configs/score.h
+@@ -132,6 +132,8 @@
+ #define CONFIG_LOADADDR			0x80800000
+ #define CONFIG_SYS_TEXT_BASE		0x87800000
+ 
++#define CONFIG_SYS_BOOTM_LEN SZ_32M
++
+ #define CONFIG_SYS_AUXCORE_BOOTDATA 0x78000000 /* Set to QSPI2 B flash at default */
+ #ifndef CONFIG_SYS_AUXCORE_FASTUP
+ #define CONFIG_CMD_BOOTAUX /* Boot M4 by command, disable this when M4 fast up */
+@@ -169,7 +171,7 @@
+         "\0" \
+     "initrd_addr=0x83800000\0" \
+     "initrd_high=0xffffffff\0" \
+-    "bootcmd_mfg=run mfgtool_args;bootm ${loadaddr} ${initrd_addr} ${fdt_addr};\0" \
++    "bootcmd_mfg=run mfgtool_args;bootm ${loadaddr} - ${fdt_addr};\0" \
+ 
+ #define CONFIG_BOOT_COMMON \
+     "fdt_addr=0x83000000\0" \
+-- 
+2.1.4
+

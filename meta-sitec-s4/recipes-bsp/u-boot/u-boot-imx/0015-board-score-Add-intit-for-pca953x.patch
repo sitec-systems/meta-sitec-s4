@@ -1,0 +1,104 @@
+From 9721bc92a6a7b325959b688598390c9226ed3514 Mon Sep 17 00:00:00 2001
+From: Robert Lehmann <robert.lehmann@sitec-systems.de>
+Date: Tue, 21 Feb 2017 09:55:42 +0100
+Subject: [PATCH 15/15] board: score: Add intit for pca953x
+
+The pca953x slave device will be probed in the board
+initialisation routine. If the probing was successful
+the port expander will be initialized with the correct
+values.
+
+Ticket #1700
+---
+ board/sitec-systems/score/score.c | 33 +++++++++++++++++++++++++++++++++
+ 1 file changed, 33 insertions(+)
+
+diff --git a/board/sitec-systems/score/score.c b/board/sitec-systems/score/score.c
+index ffa2504..482b912 100644
+--- a/board/sitec-systems/score/score.c
++++ b/board/sitec-systems/score/score.c
+@@ -29,6 +29,7 @@
+ #include <power/pmic.h>
+ #include <power/pfuze100_pmic.h>
+ #include <i2c.h>
++#include <pca953x.h>
+ #include <asm/imx-common/mxc_i2c.h>
+ #include <usb.h>
+ #include <usb/ehci-fsl.h>
+@@ -87,6 +88,19 @@ struct i2c_pads_info i2c_pad_info1 = {
+ 	},
+ };
+ 
++struct i2c_pads_info i2c_pad_info3 = {
++	.scl = {
++		.i2c_mode = MX6_PAD_KEY_COL4__I2C3_SCL |PC,
++		.gpio_mode = MX6_PAD_KEY_COL4__GPIO2_IO_14 | PC,
++		.gp = IMX_GPIO_NR(2, 14),
++	},
++	.sda = {
++		.i2c_mode = MX6_PAD_KEY_ROW4__I2C3_SDA | PC,
++		.gpio_mode = MX6_PAD_KEY_ROW4__GPIO2_IO_19 | PC,
++		.gp = IMX_GPIO_NR(2, 19),
++	},
++};
++
+ struct i2c_pads_info i2c_pad_info4 = {
+ 	.scl = {
+ 		.i2c_mode = MX6_PAD_USB_H_STROBE__I2C4_SCL | PC,
+@@ -323,6 +337,7 @@ int board_mmc_init(bd_t *bis)
+                 break;
+             case 1:
+                 imx_iomux_v3_setup_multiple_pads(
++
+                         usdhc3_pads, ARRAY_SIZE(usdhc3_pads));
+ 				usdhc_cfg[1].sdhc_clk = mxc_get_clock(MXC_ESDHC3_CLK);
+                 break;
+@@ -396,6 +411,20 @@ int board_spi_cs_gpio(unsigned bus, unsigned cs)
+ 	return (bus == 2 && cs == 2) ? (IMX_GPIO_NR(6, 12)) : -1;
+ }
+ 
++int setup_ioexpander(void)
++{
++	i2c_set_bus_num(CONFIG_PCA953X_BUS_NUM);
++	i2c_init(CONFIG_SYS_I2C_SPEED, CONFIG_SYS_I2C_PCA953X_ADDR);
++	if (i2c_probe(CONFIG_SYS_I2C_PCA953X_ADDR)) {
++		printf("Can't probe pca953x\n");
++		return 1;
++	}
++
++	pca953x_set_dir(CONFIG_SYS_I2C_PCA953X_ADDR, CONFIG_PCA953X_OUT_MASK, PCA953X_DIR_OUT);
++	pca953x_set_val(CONFIG_SYS_I2C_PCA953X_ADDR, CONFIG_PCA953X_OUT_MASK, CONFIG_PCA953X_OUT_INIT);
++	return 0;
++}
++
+ static iomux_v3_cfg_t const gpio_pads[] = {
+     MX6_PAD_LCD1_DATA18__GPIO3_IO_19 | MUX_PAD_CTRL(NO_PAD_CTRL),
+     MX6_PAD_LCD1_DATA19__GPIO3_IO_20 | MUX_PAD_CTRL(NO_PAD_CTRL),
+@@ -428,6 +457,8 @@ static void setup_gpio(void)
+     gpio_direction_output(IMX_GPIO_NR(3, 15), 0);
+     gpio_direction_output(IMX_GPIO_NR(1, 9), 1);
+ #endif // CONFIG_SITEC_S2
++
++	setup_ioexpander();
+ }
+ 
+ #ifdef CONFIG_PFUZE100_PMIC_I2C
+@@ -640,6 +671,7 @@ void ldo_mode_set(int ldo_bypass)
+ #endif
+ #endif
+ 
++
+ int board_early_init_f(void)
+ {
+     setup_iomux_uart();
+@@ -653,6 +685,7 @@ int board_init(void)
+ 
+ #ifdef CONFIG_SYS_I2C_MXC
+ 	setup_i2c(0, CONFIG_SYS_I2C_SPEED, 0x7f, &i2c_pad_info1);
++	setup_i2c(2, CONFIG_SYS_I2C_SPEED, 0x7f, &i2c_pad_info3);
+ 	setup_i2c(3, CONFIG_SYS_I2C_SPEED, 0x7f, &i2c_pad_info4);
+ #endif
+ 
+-- 
+2.1.4
+

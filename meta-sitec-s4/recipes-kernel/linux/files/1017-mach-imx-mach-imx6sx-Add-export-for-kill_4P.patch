@@ -1,0 +1,36 @@
+From 4dae4f965d23b4086861a2d6057435f37d12cbe2 Mon Sep 17 00:00:00 2001
+From: Robert Lehmann <robert.lehmann@sitec-systems.de>
+Date: Fri, 28 Oct 2016 07:23:57 +0000
+Subject: [PATCH 1017/1018] mach-imx: mach-imx6sx: Add export for kill_4P
+
+Add the export for the GPIO kill_4P. The GPIO will be defined as output
+with a low level.
+
+Ticket #1494
+---
+ arch/arm/mach-imx/mach-imx6sx.c | 2 ++
+ 1 file changed, 2 insertions(+)
+
+diff --git a/arch/arm/mach-imx/mach-imx6sx.c b/arch/arm/mach-imx/mach-imx6sx.c
+index 3b0db0e..0d72478 100644
+--- a/arch/arm/mach-imx/mach-imx6sx.c
++++ b/arch/arm/mach-imx/mach-imx6sx.c
+@@ -117,6 +117,7 @@ static void imx6sx_gpio_setup_score(void)
+ #define S4_GNSS_PWR_E 502
+ #define S4_DI2 IMX_GPIO_NR(3, 0)
+ #define S4_DI3 IMX_GPIO_NR(3, 8)
++#define S4_KILL_4P IMX_GPIO_NR(3, 11)
+ #define S4_DI_K15 IMX_GPIO_NR(3, 25)
+ #define S4_DI_K30 IMX_GPIO_NR(3, 18)
+ #define S4_K_L_PU_E IMX_GPIO_NR(7, 9)
+@@ -144,6 +145,7 @@ static void imx6sx_gpio_setup_s4_native(void)
+ 	gpio_request_export(S4_K_L_PU_E, GPIOF_OUT_INIT_LOW, K_L_PU_E);
+ 	gpio_request_export(S4_K_L_HALF, GPIOF_OUT_INIT_LOW, K_L_PU_HALF);
+ 	gpio_request_export(S4_LAN_PWR_E, GPIOF_OUT_INIT_HIGH, LAN_PWR_E);
++	gpio_request_export(S4_KILL_4P, GPIOF_OUT_INIT_LOW, KILL_4P);
+ 	pr_info("S4: Finished GPIO native init\n");
+ }
+ 
+-- 
+2.1.4
+

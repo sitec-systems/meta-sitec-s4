@@ -1,0 +1,10 @@
+.bash_history
+.cache/
+.viminfo
+.wget-hsts
+build/
+downloads/
+meta-fsl-arm/
+meta-openembedded/
+poky/
+meta-ublox-modules/

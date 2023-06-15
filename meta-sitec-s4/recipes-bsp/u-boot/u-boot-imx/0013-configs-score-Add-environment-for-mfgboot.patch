@@ -1,0 +1,41 @@
+From c634c0ce365be40765ee4e00149b12533836f69b Mon Sep 17 00:00:00 2001
+From: Robert Lehmann <robert.lehmann@sitec-systems.de>
+Date: Fri, 16 Dec 2016 13:59:04 +0100
+Subject: [PATCH] configs: score: Add environment for mfgboot
+
+Apply changes to environment to boot an initrd image with kernel and dtb image from ram
+which was downloaded through usb.
+
+Ticket #1603
+---
+ include/configs/score.h | 11 +++++------
+ 1 file changed, 5 insertions(+), 6 deletions(-)
+
+diff --git a/include/configs/score.h b/include/configs/score.h
+index 961e1c4..58fb414 100644
+--- a/include/configs/score.h
++++ b/include/configs/score.h
+@@ -153,15 +153,14 @@
+ #endif
+ 
+ #define CONFIG_MFG_ENV_SETTINGS \
+-    "mfgtool_args=setenv bootargs console=${console},${baudrate} " \
+-        "rdinit=/linuxrc " \
+-        "g_mass_storage.stall=0 g_mass_storage.removable=1 " \
+-        "g_mass_storage.idVendor=0x066F g_mass_storage.idProduct=0x37FF "\
+-        "g_mass_storage.iSerialNumber=\"\" "\
++    "mfgtool_args=setenv bootargs console=${console},${baudrate},uart_from_osc " \
++        "init=/sbin/init " \
++        "root=/dev/ram0 " \
++        "mtdparts=${mtdparts} "\
+         "\0" \
+     "initrd_addr=0x83800000\0" \
+     "initrd_high=0xffffffff\0" \
+-    "bootcmd_mfg=run mfgtool_args;bootz ${loadaddr} ${initrd_addr} ${fdt_addr};\0" \
++    "bootcmd_mfg=run mfgtool_args;bootm ${loadaddr} ${initrd_addr} ${fdt_addr};\0" \
+ 
+ #define CONFIG_BOOT_COMMON \
+     "fdt_addr=0x83000000\0" \
+-- 
+2.7.4
+

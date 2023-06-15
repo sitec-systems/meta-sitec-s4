@@ -1,0 +1,37 @@
+From fc21416273ff1bfd197871ca4a18e408c2c0a7ce Mon Sep 17 00:00:00 2001
+From: Robert Lehmann <robert.lehmann@sitec-systems.de>
+Date: Wed, 2 Nov 2016 09:35:19 +0000
+Subject: [PATCH 1021/1021] mach-imx6sx: Add export for buzzer gpio
+
+The buzzer gpio will be exported at bootup. The configuration for the
+gpio is output with a low level.
+
+Ticket #1570
+---
+ arch/arm/mach-imx/mach-imx6sx.c | 3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
+
+diff --git a/arch/arm/mach-imx/mach-imx6sx.c b/arch/arm/mach-imx/mach-imx6sx.c
+index beaeb13..f3c390e 100644
+--- a/arch/arm/mach-imx/mach-imx6sx.c
++++ b/arch/arm/mach-imx/mach-imx6sx.c
+@@ -162,6 +162,7 @@ static void imx6sx_gpio_setup_score(void)
+ #define S4_ACC_IRQ IMX_GPIO_NR(3, 16)
+ #define S4_CHRG_IRQ IMX_GPIO_NR(3, 17)
+ #define S4_TEMP_IRQ IMX_GPIO_NR(3, 23)
++#define S4_BUZZER IMX_GPIO_NR(1, 12)
+ static void imx6sx_gpio_setup_s4_native(void)
+ {
+ 	pr_info("S4: Doing GPIO native init\n");
+@@ -183,7 +184,7 @@ static void imx6sx_gpio_setup_s4_native(void)
+ 	gpio_request_export(S4_ACC_IRQ, GPIOF_IN, ACC_IRQ);
+ 	gpio_request_export(S4_CHRG_IRQ, GPIOF_IN, CHRG_IRQ);
+ 	gpio_request_export(S4_TEMP_IRQ, GPIOF_IN, TEMP_IRQ);
+-	
++	gpio_request_export(S4_BUZZER, GPIOF_OUT_INIT_LOW, BUZZER);
+ 	pr_info("S4: Finished GPIO native init\n");
+ }
+ 
+-- 
+2.1.4
+

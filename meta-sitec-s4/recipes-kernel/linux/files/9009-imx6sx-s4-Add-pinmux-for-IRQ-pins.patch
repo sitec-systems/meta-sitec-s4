@@ -1,0 +1,34 @@
+From 129e4c0c1d1d978fccd5c35b522c4b4ac3b9a8bb Mon Sep 17 00:00:00 2001
+From: Robert Lehmann <robert.lehmann@sitec-systems.de>
+Date: Tue, 1 Nov 2016 13:51:09 +0000
+Subject: [PATCH] imx6sx-s4: Add pinmux for IRQ pins
+
+Add pinmux settings for IRQ pins. The pins got a general purpose configuration for
+the electrical characteristics (except the TEMP_IRQ pin).
+
+Ticket #1566
+---
+ arch/arm/boot/dts/imx6sx-s4.dts | 7 +++++++
+ 1 file changed, 7 insertions(+)
+
+diff --git a/arch/arm/boot/dts/imx6sx-s4.dts b/arch/arm/boot/dts/imx6sx-s4.dts
+index 9db9d09..03e38b2 100644
+--- a/arch/arm/boot/dts/imx6sx-s4.dts
++++ b/arch/arm/boot/dts/imx6sx-s4.dts
+@@ -378,6 +378,13 @@
+ 			MX6SX_PAD_LCD1_DATA07__GPIO3_IO_8   0xc9        // DI_3
+ 			MX6SX_PAD_LCD1_ENABLE__GPIO3_IO_25	0xc9		// DI_K15
+ 			MX6SX_PAD_LCD1_DATA17__GPIO3_IO_18	0xc9		// DI_K30
++			MX6SX_PAD_LCD1_HSYNC__GPIO3_IO_26   0xc9        // GSM_RI
++			MX6SX_PAD_LCD1_VSYNC__GPIO3_IO_28   0xc9		// PWR_ALERT
++			MX6SX_PAD_LCD1_RESET__GPIO3_IO_27   0xc9		// FC_IRQ
++			MX6SX_PAD_LCD1_DATA08__GPIO3_IO_9   0xc9		// I2C_IRQ
++			MX6SX_PAD_LCD1_DATA15__GPIO3_IO_16  0xc9		// ACC_IRQ
++			MX6SX_PAD_LCD1_DATA16__GPIO3_IO_17  0xc9		// CHRG_IRQ
++			MX6SX_PAD_LCD1_DATA22__GPIO3_IO_23  0xb001		// TEMP_IRQ
+             >;
+         };
+ 
+-- 
+2.1.4
+

@@ -1,0 +1,23 @@
+From 0420bbe345ade06e8ec51e552dabebe4ed0bb103 Mon Sep 17 00:00:00 2001
+From: Robert Lehmann <robert.lehmann@sitec-systems.de>
+Date: Wed, 17 Aug 2016 10:43:26 +0200
+Subject: [PATCH 4/5] config: score_defconfig: Add option for SPINOR
+
+Ticket #1353
+---
+ configs/score_defconfig | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/configs/score_defconfig b/configs/score_defconfig
+index 4cc938a..02d9fff 100644
+--- a/configs/score_defconfig
++++ b/configs/score_defconfig
+@@ -1,4 +1,4 @@
+-CONFIG_SYS_EXTRA_OPTIONS="IMX_CONFIG=board/sitec-systems/score/imximage.cfg,MX6SX"
++CONFIG_SYS_EXTRA_OPTIONS="IMX_CONFIG=board/sitec-systems/score/imximage.cfg,MX6SX,SYS_BOOT_SPINOR"
+ CONFIG_ARM=y
+ CONFIG_TARGET_SCORE=y
+ CONFIG_DM=y
+-- 
+2.7.4
+

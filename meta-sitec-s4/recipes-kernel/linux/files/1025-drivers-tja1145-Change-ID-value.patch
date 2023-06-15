@@ -1,0 +1,32 @@
+From 0c9bc784db70533269b0b747aeddaaf9dc58e0db Mon Sep 17 00:00:00 2001
+From: Robert Lehmann <robert.lehmann@sitec-systems.de>
+Date: Wed, 8 Mar 2017 15:52:53 +0000
+Subject: [PATCH] drivers: tja1145: Change ID value
+
+Change the ID value for the chip because the type of the chip is a diffrent one.
+The new type has another ID. So the ID needs to be changed to successfully probe
+the device.
+
+Ticket #1756
+---
+ drivers/misc/tja1145.c | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/drivers/misc/tja1145.c b/drivers/misc/tja1145.c
+index ebe9aeb..dddd07a 100644
+--- a/drivers/misc/tja1145.c
++++ b/drivers/misc/tja1145.c
+@@ -74,8 +74,8 @@
+ // Masks for register Meanings
+ #define CMC 0x3
+ 
+-// ID for CAN FD
+-#define ID 0x74
++// ID for CAN
++#define ID 0x70
+ 
+ // System modes
+ #define MODE_SLEEP 0x01
+-- 
+2.1.4
+

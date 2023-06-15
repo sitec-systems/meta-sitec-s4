@@ -1,0 +1,60 @@
+From 2403ffb6a26d4135f3c4bb62910e5ec38c1aac4f Mon Sep 17 00:00:00 2001
+From: Robert Lehmann <robert.lehmann@sitec-systems.de>
+Date: Wed, 24 Aug 2016 16:11:35 +0200
+Subject: [PATCH 9004/9006] dts: imx6sx-s4: Add some GPIOs to pin mux
+
+Add GPIOs to the pinctl section.
+
+Ticket #1247
+---
+ arch/arm/boot/dts/imx6sx-s4.dts | 20 ++++++++++++--------
+ 1 file changed, 12 insertions(+), 8 deletions(-)
+
+diff --git a/arch/arm/boot/dts/imx6sx-s4.dts b/arch/arm/boot/dts/imx6sx-s4.dts
+index cb09596..accfa3f 100644
+--- a/arch/arm/boot/dts/imx6sx-s4.dts
++++ b/arch/arm/boot/dts/imx6sx-s4.dts
+@@ -453,6 +453,11 @@
+ 			MX6SX_PAD_SD4_DATA0__GPIO6_IO_14 0x80000000 // SPI3 SS3
+ 			MX6SX_PAD_SD3_DATA7__GPIO7_IO_9 0xc9 // K_L_PU_E
+ 			MX6SX_PAD_SD3_DATA6__GPIO7_IO_8 0xc9 // K_L_1/2
++			MX6SX_PAD_LCD1_DATA09__GPIO3_IO_10 0xc9 // WIFI_PWR_E
++			MX6SX_PAD_LCD1_DATA10__GPIO3_IO_11 0xc9 // kill_4P
++			MX6SX_PAD_QSPI1B_DATA0__GPIO4_IO_24 0xc9 // GSM_PWR_E
++			MX6SX_PAD_QSPI1B_DATA1__GPIO4_IO_25 0xc9 // SIM_SEL
++            MX6SX_PAD_QSPI1B_SS0_B__GPIO4_IO_30 0xc9 // LAN_PWR_E
+             >;
+         };
+ 
+@@ -551,12 +556,13 @@
+ 		
+         pinctrl_usdhc2: usdhc2grp {
+ 			fsl,pins = <
+-				MX6SX_PAD_SD2_CMD__USDHC2_CMD		0x17059
+-				MX6SX_PAD_SD2_CLK__USDHC2_CLK		0x10059
+-				MX6SX_PAD_SD2_DATA0__USDHC2_DATA0	0x17059
+-				MX6SX_PAD_SD2_DATA1__USDHC2_DATA1	0x17059
+-				MX6SX_PAD_SD2_DATA2__USDHC2_DATA2	0x17059
+-				MX6SX_PAD_SD2_DATA3__USDHC2_DATA3	0x17059
++			MX6SX_PAD_SD2_CMD__USDHC2_CMD		0x17059
++			MX6SX_PAD_SD2_CLK__USDHC2_CLK		0x10059
++			MX6SX_PAD_SD2_DATA0__USDHC2_DATA0	0x17059
++			MX6SX_PAD_SD2_DATA1__USDHC2_DATA1	0x17059
++			MX6SX_PAD_SD2_DATA2__USDHC2_DATA2	0x17059
++			MX6SX_PAD_SD2_DATA3__USDHC2_DATA3	0x17059
++			MX6SX_PAD_QSPI1B_SCLK__GPIO4_IO_29  0x17059 // SD_CD
+ 			>;
+ 		};
+ 
+@@ -568,8 +574,6 @@
+             MX6SX_PAD_SD3_DATA1__USDHC3_DATA1	0x17069
+             MX6SX_PAD_SD3_DATA2__USDHC3_DATA2	0x17069
+             MX6SX_PAD_SD3_DATA3__USDHC3_DATA3	0x17069
+-            MX6SX_PAD_SD3_DATA4__GPIO7_IO_6		0x17059 /* CD */
+-            MX6SX_PAD_SD3_DATA5__GPIO7_IO_7		0x17059 /* WP */
+             >;
+         };
+     };
+-- 
+2.7.4
+

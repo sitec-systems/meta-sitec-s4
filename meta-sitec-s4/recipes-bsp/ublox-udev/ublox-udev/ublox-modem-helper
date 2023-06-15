@@ -1,0 +1,11 @@
+#!/bin/bash
+
+neo_state=$(cat /sys/class/gpio/gpio509/value)
+
+if [ $neo_state -eq 1 ]; then
+  val=$1
+  let "val = val - 1"
+  echo $val
+else
+  echo $1
+fi

@@ -1,0 +1,713 @@
+From 56eff55c5695da860e56eb05c316b4d284090642 Mon Sep 17 00:00:00 2001
+From: Robert Lehmann <robert.lehmann@sitec-systems.de>
+Date: Thu, 27 Oct 2016 14:02:31 +0000
+Subject: [PATCH] misc: tja1145: Extend control possibilites
+
+The patch extends the control possibilities of the driver. Now the
+user is able to set the transceiver mode and the CAN mode seperatly.
+It is also possible to ask the driver for the values of the main status
+and transceiver status register and for caught events on the transceiver.
+
+Ticket #1469
+---
+ drivers/misc/tja1145.c | 538 +++++++++++++++++++++++++++++++++++++++++++------
+ 1 file changed, 471 insertions(+), 67 deletions(-)
+
+diff --git a/drivers/misc/tja1145.c b/drivers/misc/tja1145.c
+index f1e03dc..ebe9aeb 100644
+--- a/drivers/misc/tja1145.c
++++ b/drivers/misc/tja1145.c
+@@ -1,3 +1,4 @@
++
+ /*
+  * Copyright (C) 2016  sitec systems GmbH
+  *
+@@ -16,37 +17,126 @@
+  * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110, USA
+  */
+ 
+-#include <linux/module.h>
+-#include <linux/spi/spi.h>
+-#include <linux/err.h>
+ #include <linux/device.h>
++#include <linux/err.h>
++#include <linux/module.h>
++#include <linux/mutex.h>
++#include <linux/of.h>
+ #include <linux/regmap.h>
+ #include <linux/slab.h>
+-#include <linux/of.h>
+-#include <linux/mutex.h>
+-
+-#define TJA1145_REG_ID			0x7e
+-#define TJA1145_REG_MAIN_STATUS 0x03
+-#define TJA1145_REG_MODE_CTRL	0x01
++#include <linux/spi/spi.h>
+ 
+-#define TJA1145_ID 0x74
+-#define TJA1145_MODE_SLEEP 0x01
+-#define TJA1145_MODE_STANDBY 0x04
+-#define TJA1145_MODE_NORMAL 0x07
++// Primary control registers
++#define REG_MODE_CTRL 0x01
++#define REG_MAIN_STATUS 0x03
++#define REG_SYS_EVENT_EN 0x04
++#define REG_MEM0 0x06
++#define REG_MEM1 0x07
++#define REG_MEM2 0x08
++#define REG_MEM3 0x09
++
++// Transceiver Control and partial networking
++#define REG_CAN_CTRL 0x20
++#define REG_TRANSCEIVER_STATUS 0x22
++#define REG_TRANSCEIVER_EVENT_EN 0x23
++#define REG_DATA_RATE 0x26
++#define REG_ID0 0x27
++#define REG_ID1 0x28
++#define REG_ID2 0x29
++#define REG_ID3 0x2A
++#define REG_MASK0 0x2B
++#define REG_MASK1 0x2C
++#define REG_MASK2 0x2D
++#define REG_MASK3 0x2E
++#define REG_FRAME_CTRL 0x2F
++#define REG_DATA_MASK0 0x68
++#define REG_DATA_MASK1 0x69
++#define REG_DATA_MASK2 0x6A
++#define REG_DATA_MASK3 0x6B
++#define REG_DATA_MASK4 0x6C
++#define REG_DATA_MASK5 0x6D
++#define REG_DATA_MASK6 0x6E
++#define REG_DATA_MASK7 0x6F
++
++// WAKE pin control and status registers
++#define REG_WAKE_STATUS 0x4B
++#define REG_WAKE_ENABLE 0x4C
++
++// Event capture
++#define REG_GLOBAL_EVENT_STATUS 0x60
++#define REG_SYS_EVENT_STATUS 0x61
++#define REG_TRANSCEIVER_EVENT_STATUS 0x63
++#define REG_WAKE_EVENT_STATUS 0x64
++
++// Device identification
++#define REG_DEV_ID 0x7E
++
++// Masks for register Meanings
++#define CMC 0x3
++
++// ID for CAN FD
++#define ID 0x74
++
++// System modes
++#define MODE_SLEEP 0x01
++#define MODE_STANDBY 0x04
++#define MODE_NORMAL 0x07
++
++// CAN mode control
++#define CAN_OFFLINE 0x00
++#define CAN_ACTIVE_DET 0x01
++#define CAN_ACTIVE 0x02
++#define CAN_LISTEN_ONLY 0x03
++
++// Main status bits
++#define FSMS 0x80
++#define OTWS 0x40
++#define NMS 0x20
++
++// Transceiver status bits
++#define CTS 0x80
++#define CPNERR 0x40
++#define CPNS 0x20
++#define COSCS 0x10
++#define CBSS 0x08
++#define VCS 0x02
++#define CFS 0x01
++
++// System event enable
++#define OTWE 0x04
++#define SPIFE 0x02
++
++// Transceiver event enable
++#define CBSE 0x10
++#define CFE 0x02
++#define CWE 0x01
++
++// Main event status bits
++#define OTW 0x04
++#define SPIF 0x02
++
++// Transceiver event status bits
++#define PNFDE 0x20
++#define CBS 0x10
++#define CF 0x02
++#define CW 0x01
+ 
+ struct tja1145_priv {
+ 	struct device *dev;
+ 	struct regmap *regmap;
++	unsigned int reg;
++	struct mutex lock;
+ };
+ 
+ struct regmap_config tja1145_regmap_config = {
+-	.reg_bits = 8,
+-	.val_bits = 8,
+-	.read_flag_mask = 0x01,
+-	.write_flag_mask = 0x00,
++    .reg_bits = 8,
++    .val_bits = 8,
++    .read_flag_mask = 0x01,
++    .write_flag_mask = 0x00,
+ };
+ 
+-static int tja1145_read_reg(struct device *dev, unsigned int reg, unsigned int *rval)
++static int tja1145_read_reg(struct device *dev, unsigned int reg,
++			    unsigned int *rval)
+ {
+ 	struct tja1145_priv *data = dev_get_drvdata(dev);
+ 	int ret;
+@@ -60,7 +150,8 @@ static int tja1145_read_reg(struct device *dev, unsigned int reg, unsigned int *
+ 	return 0;
+ }
+ 
+-static int tja1145_write_reg(struct device *dev, unsigned int reg, unsigned int val)
++static int tja1145_write_reg(struct device *dev, unsigned int reg,
++			     unsigned int val)
+ {
+ 	struct tja1145_priv *data = dev_get_drvdata(dev);
+ 	unsigned int write_reg;
+@@ -77,39 +168,93 @@ static int tja1145_write_reg(struct device *dev, unsigned int reg, unsigned int
+ 	return 0;
+ }
+ 
++static int tja1145_update_reg(struct device *dev, unsigned int reg,
++			      unsigned int mask, unsigned int val)
++{
++	unsigned int cur_val;
++	unsigned int new_val;
++	int ret;
++
++	dev_info(dev, "Writing new val 0x%02x to reg 0x%02x", val, reg);
++
++	ret = tja1145_read_reg(dev, reg, &cur_val);
++	if (ret < 0) {
++		return ret;
++	}
++
++	cur_val = cur_val & (~mask);
++	new_val = cur_val | val;
++	dev_info(dev, "Writing new value 0x%02x\n", new_val);
++	ret = tja1145_write_reg(dev, reg, new_val);
++	if (reg < 0) {
++		return ret;
++	}
++
++	return 0;
++}
++
++static int tja1145_is_bit_set(unsigned int val, unsigned int mask)
++{
++	return (val & mask) == mask;
++}
++
++static int tja1145_reset_event_status(struct device *dev)
++{
++	int ret;
++
++	// The event status registers will be cleard by writing a 1 to the
++	// corresponding bit.
++	ret = tja1145_write_reg(dev, REG_GLOBAL_EVENT_STATUS, 0xff);
++	if (ret < 0) {
++		return ret;
++	}
++
++	ret = tja1145_write_reg(dev, REG_SYS_EVENT_STATUS, 0xff);
++	if (ret < 0) {
++		return ret;
++	}
++
++	ret = tja1145_write_reg(dev, REG_TRANSCEIVER_EVENT_STATUS, 0xff);
++	if (ret < 0) {
++		return ret;
++	}
++
++	ret = tja1145_write_reg(dev, REG_WAKE_EVENT_STATUS, 0xff);
++
++	return ret;
++}
++
+ static ssize_t tja1145_version_show(struct device *dev,
+-									struct device_attribute *attr, char *buf)
++				    struct device_attribute *attr, char *buf)
+ {
+ 	return sprintf(buf, "Version: 1.0.0\n");
+ }
+-static DEVICE_ATTR(tja1145_version, S_IRUGO, tja1145_version_show, NULL);
++static DEVICE_ATTR(version, S_IRUGO, tja1145_version_show, NULL);
+ 
+-ssize_t tja1145_mode_store(struct device *dev,
+-						   struct device_attribute *attr,
+-						   const char *buf,
+-						   size_t count)
++ssize_t tja1145_mode_store(struct device *dev, struct device_attribute *attr,
++			   const char *buf, size_t count)
+ {
+ 	int ret;
+ 	char mode[15];
+ 
+-	strncpy(mode, buf, count -1);
++	strncpy(mode, buf, count - 1);
+ 
+ 	if (!strncmp(buf, "normal", count - 1)) {
+-		ret = tja1145_write_reg(dev, TJA1145_REG_MODE_CTRL, TJA1145_MODE_NORMAL);
++		ret = tja1145_write_reg(dev, REG_MODE_CTRL, MODE_NORMAL);
+ 		if (ret) {
+ 			dev_err(dev, "Can't set operation mode to normal\n");
+ 			return ret;
+ 		}
+ 		dev_dbg(dev, "Switch to normal mode\n");
+-	} else if (!strcmp(mode, "sleep")) {
+-		ret = tja1145_write_reg(dev, TJA1145_REG_MODE_CTRL, TJA1145_MODE_SLEEP);
++	} else if (!strncmp(buf, "sleep", count - 1)) {
++		ret = tja1145_write_reg(dev, REG_MODE_CTRL, MODE_SLEEP);
+ 		if (ret) {
+ 			dev_err(dev, "Can't set operation mode to sleep\n");
+ 			return ret;
+ 		}
+ 		dev_dbg(dev, "Switch to normal sleep\n");
+-	} else if (!strcmp(mode, "standby")) {
+-		ret = tja1145_write_reg(dev, TJA1145_REG_MODE_CTRL, TJA1145_MODE_STANDBY);
++	} else if (!strncmp(buf, "standby", count - 1)) {
++		ret = tja1145_write_reg(dev, REG_MODE_CTRL, MODE_STANDBY);
+ 		if (ret) {
+ 			dev_err(dev, "Can't set operation mode to standby\n");
+ 			return ret;
+@@ -123,41 +268,271 @@ ssize_t tja1145_mode_store(struct device *dev,
+ 	return count;
+ }
+ 
+-ssize_t tja1145_mode_show(struct device *dev,
+-						  struct device_attribute *attr,
+-						  char *buf)
++ssize_t tja1145_mode_show(struct device *dev, struct device_attribute *attr,
++			  char *buf)
+ {
+ 	unsigned int mode;
+ 	int ret;
+ 
+-	ret = tja1145_read_reg(dev, TJA1145_REG_MODE_CTRL, &mode);
++	ret = tja1145_read_reg(dev, REG_MODE_CTRL, &mode);
+ 	if (ret < 0) {
+ 		dev_err(dev, "Can't read mode ctrl register\n");
+ 		return -EBUSY;
+ 	}
+ 
+-	switch(mode) {
+-	case TJA1145_MODE_STANDBY:
+-		return sprintf(buf, "standby");
+-	case TJA1145_MODE_SLEEP:
+-		return sprintf(buf, "sleep");
+-	case TJA1145_MODE_NORMAL:
+-		return sprintf(buf, "normal");
++	switch (mode) {
++	case MODE_STANDBY:
++		return sprintf(buf, "normal sleep [standby]\n");
++	case MODE_SLEEP:
++		return sprintf(buf, "normal [sleep] standby\n");
++	case MODE_NORMAL:
++		return sprintf(buf, "[normal] sleep standby\n");
+ 	}
+ 
+ 	return sprintf(buf, "Unsupported Operation mode\n");
+ }
+ 
+-static DEVICE_ATTR(tja1145_mode, S_IWUSR | S_IRUGO, tja1145_mode_show, tja1145_mode_store);
++static DEVICE_ATTR(tja1145_mode, S_IWUSR | S_IRUGO, tja1145_mode_show,
++		   tja1145_mode_store);
++static DEVICE_ATTR(modectrl, S_IWUSR | S_IRUGO, tja1145_mode_show,
++		   tja1145_mode_store);
++
++ssize_t tja1145_canctrl_store(struct device *dev, struct device_attribute *attr,
++			      const char *buf, size_t count)
++{
++	int ret;
++	unsigned int new_val;
++
++	if (!strncmp(buf, "active_det", strlen("active_det"))) {
++		new_val = CAN_ACTIVE_DET;
++	} else if (!strncmp(buf, "active", strlen("active"))) {
++		new_val = CAN_ACTIVE;
++	} else if (!strncmp(buf, "offline", strlen("active"))) {
++		new_val = CAN_OFFLINE;
++	} else if (!strncmp(buf, "listen_only", strlen("listen_only"))) {
++		new_val = CAN_LISTEN_ONLY;
++	} else {
++		dev_err(dev, "Unsupported CAN control\n");
++		return -EINVAL;
++	}
++
++	ret = tja1145_update_reg(dev, REG_CAN_CTRL, CMC, new_val);
++	if (ret < 0) {
++		return ret;
++	}
++
++	return count;
++}
++
++ssize_t tja1145_canctrl_show(struct device *dev, struct device_attribute *attr,
++			     char *buf)
++{
++	int ret;
++	unsigned int rval;
++	ssize_t count;
++
++	ret = tja1145_read_reg(dev, REG_CAN_CTRL, &rval);
++	if (ret < 0) {
++		return ret;
++	}
++
++	rval = rval & CMC;
++	switch (rval) {
++	case CAN_OFFLINE:
++		count =
++		    sprintf(buf, "active active_det listen_only [offline]\n");
++		break;
++	case CAN_LISTEN_ONLY:
++		count =
++		    sprintf(buf, "active active_det [listen_only] offline\n");
++		break;
++	case CAN_ACTIVE_DET:
++		count =
++		    sprintf(buf, "active [active_det] listen_only offline\n");
++		break;
++	case CAN_ACTIVE:
++		count =
++		    sprintf(buf, "[active] active_det listen_only offline\n");
++		break;
++	default:
++		dev_err(dev, "Invalid value\n");
++		return -EINVAL;
++	}
++
++	return count;
++}
++
++static DEVICE_ATTR(canctrl, S_IWUSR | S_IRUGO, tja1145_canctrl_show,
++		   tja1145_canctrl_store);
++
++ssize_t tja1145_main_status_show(struct device *dev,
++				 struct device_attribute *attr, char *buf)
++{
++	int ret;
++	unsigned int rval;
++
++	ret = tja1145_read_reg(dev, REG_MAIN_STATUS, &rval);
++	if (ret < 0) {
++		return ret;
++	}
++
++	if (tja1145_is_bit_set(rval, FSMS)) {
++		strcat(buf, "FSMS");
++	} else {
++		strcat(buf, "~FSMS");
++	}
++
++	if (tja1145_is_bit_set(rval, OTWS)) {
++		strcat(buf, " OTWS");
++	} else {
++		strcat(buf, " ~OTWS");
++	}
++
++	if (tja1145_is_bit_set(rval, NMS)) {
++		strcat(buf, " NMS\n");
++	} else {
++		strcat(buf, " ~NMS\n");
++	}
++
++	return strlen(buf);
++}
++
++static DEVICE_ATTR(main_status, S_IRUGO, tja1145_main_status_show, NULL);
++
++ssize_t tja1145_transcevier_status_show(struct device *dev,
++					struct device_attribute *attr,
++					char *buf)
++{
++	int ret;
++	unsigned int rval;
++
++	ret = tja1145_read_reg(dev, REG_TRANSCEIVER_STATUS, &rval);
++	if (ret < 0) {
++		return ret;
++	}
++
++	if (tja1145_is_bit_set(rval, CTS)) {
++		strcat(buf, "CTS");
++	} else {
++		strcat(buf, "~CTS");
++	}
++
++	if (tja1145_is_bit_set(rval, CPNERR)) {
++		strcat(buf, " CPNERR");
++	} else {
++		strcat(buf, " ~CPNERR");
++	}
++
++	if (tja1145_is_bit_set(rval, CPNS)) {
++		strcat(buf, " CPNS");
++	} else {
++		strcat(buf, " ~CPNS");
++	}
++
++	if (tja1145_is_bit_set(rval, COSCS)) {
++		strcat(buf, " COSCS");
++	} else {
++		strcat(buf, " ~COSCS");
++	}
++
++	if (tja1145_is_bit_set(rval, CBSS)) {
++		strcat(buf, " CBSS");
++	} else {
++		strcat(buf, " ~CBSS");
++	}
++
++	if (tja1145_is_bit_set(rval, VCS)) {
++		strcat(buf, " VCS");
++	} else {
++		strcat(buf, " ~VCS");
++	}
++
++	if (tja1145_is_bit_set(rval, CFS)) {
++		strcat(buf, " CFS\n");
++	} else {
++		strcat(buf, " ~CFS\n");
++	}
++
++	return strlen(buf);
++}
++
++static DEVICE_ATTR(transceiver_status, S_IRUGO, tja1145_transcevier_status_show,
++		   NULL);
++
++ssize_t tja1145_event_show(struct device *dev, struct device_attribute *attr,
++			   char *buf)
++{
++	int ret;
++	unsigned int rval;
++
++	ret = tja1145_read_reg(dev, REG_SYS_EVENT_STATUS, &rval);
++	if (ret < 0) {
++		return ret;
++	}
++
++	if (tja1145_is_bit_set(rval, OTW)) {
++		strcat(buf, "OTW");
++	} else {
++		strcat(buf, "~OTW");
++	}
++
++	if (tja1145_is_bit_set(rval, SPIF)) {
++		strcat(buf, " SPIF");
++	} else {
++		strcat(buf, " ~SPIF");
++	}
++
++	ret = tja1145_read_reg(dev, REG_TRANSCEIVER_EVENT_STATUS, &rval);
++	if (ret < 0) {
++		return ret;
++	}
++
++	if (tja1145_is_bit_set(rval, PNFDE)) {
++		strcat(buf, " PNFDE");
++	} else {
++		strcat(buf, " ~PNFDE");
++	}
++
++	if (tja1145_is_bit_set(rval, CBS)) {
++		strcat(buf, " CBS");
++	} else {
++		strcat(buf, " ~CBS");
++	}
++
++	if (tja1145_is_bit_set(rval, CF)) {
++		strcat(buf, " CF");
++	} else {
++		strcat(buf, " ~CF");
++	}
++
++	if (tja1145_is_bit_set(rval, CW)) {
++		strcat(buf, " CW\n");
++	} else {
++		strcat(buf, " ~CW\n");
++	}
++
++	ret = tja1145_reset_event_status(dev);
++	if (ret < 0) {
++		return ret;
++	}
++
++	return strlen(buf);
++}
++
++static DEVICE_ATTR(event, S_IRUGO, tja1145_event_show, NULL);
+ 
+ static struct attribute *tja1145_attributes[] = {
+-	&dev_attr_tja1145_version.attr,
+-	&dev_attr_tja1145_mode.attr,
+-	NULL
+-};
++    &dev_attr_version.attr,
++    &dev_attr_tja1145_mode.attr,
++    &dev_attr_main_status.attr,
++    &dev_attr_modectrl.attr,
++    &dev_attr_canctrl.attr,
++    &dev_attr_transceiver_status.attr,
++    &dev_attr_event.attr,
++    NULL};
+ 
+ static const struct attribute_group tja1145_attr_group = {
+-	.attrs = tja1145_attributes,
++    .attrs = tja1145_attributes,
+ };
+ 
+ static int tja1145_check_devid(struct device *dev)
+@@ -165,44 +540,68 @@ static int tja1145_check_devid(struct device *dev)
+ 	unsigned int id;
+ 	int ret;
+ 
+-	ret = tja1145_read_reg(dev, TJA1145_REG_ID, &id);
++	ret = tja1145_read_reg(dev, REG_DEV_ID, &id);
+ 	if (ret < 0) {
+ 		return ret;
+ 	}
+ 
+ 	dev_info(dev, "Read ID 0x%2X\n", id);
+-	if (id != TJA1145_ID) {
++	if (id != ID) {
+ 		return -ENODEV;
+ 	}
+ 
+ 	return 0;
+ }
+ 
++static int tja1145_event_enable(struct device *dev)
++{
++	int ret;
++
++	ret = tja1145_write_reg(dev, REG_SYS_EVENT_EN, OTWE | SPIFE);
++	if (ret < 0) {
++		return ret;
++	}
++
++	ret =
++	    tja1145_write_reg(dev, REG_TRANSCEIVER_EVENT_EN, CBSE | CFE | CWE);
++	if (ret < 0) {
++		return ret;
++	}
++
++	return 0;
++}
++
+ static int tja1145_init(struct device *dev)
+ {
+ 	int ret;
+ 	unsigned int rval;
+ 
+-	ret = tja1145_write_reg(dev, TJA1145_REG_MODE_CTRL, TJA1145_MODE_STANDBY);
++	ret = tja1145_write_reg(dev, REG_MODE_CTRL, MODE_STANDBY);
+ 	if (ret < 0) {
+ 		return ret;
+ 	}
+ 
+-	ret = tja1145_read_reg(dev, TJA1145_REG_MODE_CTRL, &rval);
++	ret = tja1145_read_reg(dev, REG_MODE_CTRL, &rval);
+ 	if (ret < 0) {
+ 		return ret;
+ 	}
+ 
+-	if (rval != TJA1145_MODE_STANDBY) {
+-		dev_err(dev, "Device is not in Standby mode, but it should be\n");
++	if (rval != MODE_STANDBY) {
++		dev_err(dev,
++			"Device is not in Standby mode, but it should be\n");
+ 		return -EINVAL;
+ 	}
+ 
+-	ret = tja1145_read_reg(dev, TJA1145_REG_MAIN_STATUS, &rval);
++	ret = tja1145_reset_event_status(dev);
+ 	if (ret < 0) {
+ 		return ret;
+ 	}
+ 
++	ret = tja1145_event_enable(dev);
++	if (!ret) {
++		return ret;
++	}
++
+ 	return 0;
+ }
+ 
+@@ -223,7 +622,8 @@ static int tja1145_probe(struct spi_device *client)
+ 	regmap = devm_regmap_init_spi(client, &tja1145_regmap_config);
+ 	if (IS_ERR(regmap)) {
+ 		err = PTR_ERR(regmap);
+-		dev_err(&client->dev, "Failed to init the regmap for the device\n");
++		dev_err(&client->dev,
++			"Failed to init the regmap for the device\n");
+ 		goto exit;
+ 	}
+ 
+@@ -238,6 +638,8 @@ static int tja1145_probe(struct spi_device *client)
+ 	data->dev = &client->dev;
+ 	dev = data->dev;
+ 	data->regmap = regmap;
++	data->reg = 0x00;
++	mutex_init(&data->lock);
+ 
+ 	err = tja1145_check_devid(dev);
+ 	if (err) {
+@@ -281,27 +683,29 @@ static int tja1145_remove(struct spi_device *client)
+ }
+ 
+ static const struct of_device_id tja1145_of_match[] = {
+-	{ .compatible = "nxp,tja1145", },
+-	{ },
++    {
++	.compatible = "nxp,tja1145",
++    },
++    {},
+ };
+ 
+ MODULE_DEVICE_TABLE(of, tja1145_of_match);
+ 
+ static const struct spi_device_id tja1145_id[] = {
+-	{ "tja1145", 0 },
+-	{ },
++    {"tja1145", 0}, {},
+ };
+ MODULE_DEVICE_TABLE(spi, tja1145_id);
+ 
+ static struct spi_driver tja1145_spi_driver = {
+-	.driver = {
+-		.owner = THIS_MODULE,
+-		.name = "tja1145",
+-		.of_match_table = tja1145_of_match,
++    .driver =
++	{
++	    .owner = THIS_MODULE,
++	    .name = "tja1145",
++	    .of_match_table = tja1145_of_match,
+ 	},
+-	.id_table = tja1145_id,
+-	.probe = tja1145_probe,
+-	.remove = tja1145_remove,
++    .id_table = tja1145_id,
++    .probe = tja1145_probe,
++    .remove = tja1145_remove,
+ };
+ 
+ module_spi_driver(tja1145_spi_driver);
+-- 
+2.1.4
+

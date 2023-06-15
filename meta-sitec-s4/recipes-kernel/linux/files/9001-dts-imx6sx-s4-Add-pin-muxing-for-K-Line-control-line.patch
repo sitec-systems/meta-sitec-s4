@@ -1,0 +1,29 @@
+From 6a0be5eb757cae4ebad820ce7bd4dfe8cc076435 Mon Sep 17 00:00:00 2001
+From: Robert Lehmann <robert.lehmann@sitec-systems.de>
+Date: Fri, 15 Jul 2016 08:14:05 +0200
+Subject: [PATCH] dts: imx6sx-s4: Add pin muxing for K-Line control lines
+
+The K-Line control lines are now muxed to the right pins of the
+processor.
+
+Ticket #1247
+---
+ arch/arm/boot/dts/imx6sx-s4.dts | 2 ++
+ 1 file changed, 2 insertions(+)
+
+diff --git a/arch/arm/boot/dts/imx6sx-s4.dts b/arch/arm/boot/dts/imx6sx-s4.dts
+index 7c1aca6..0d7a158 100644
+--- a/arch/arm/boot/dts/imx6sx-s4.dts
++++ b/arch/arm/boot/dts/imx6sx-s4.dts
+@@ -450,6 +450,8 @@
+ 			MX6SX_PAD_SD4_CMD__GPIO6_IO_13 0x80000000 // SPI3 SS1
+ 			MX6SX_PAD_SD4_CLK__GPIO6_IO_12 0x80000000 // SPI3 SS2
+ 			MX6SX_PAD_SD4_DATA0__GPIO6_IO_14 0x80000000 // SPI3 SS3
++			MX6SX_PAD_SD3_DATA7__GPIO7_IO_9 0xc9 // K_L_PU_E
++			MX6SX_PAD_SD3_DATA6__GPIO7_IO_8 0xc9 // K_L_1/2
+             >;
+         };
+ 
+-- 
+1.9.1
+

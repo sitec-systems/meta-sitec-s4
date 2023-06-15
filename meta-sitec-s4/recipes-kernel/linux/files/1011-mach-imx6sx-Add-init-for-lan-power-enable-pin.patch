@@ -1,0 +1,49 @@
+From eea91ce8d255c4e3b4368ccbff8cebf21f4e10a3 Mon Sep 17 00:00:00 2001
+From: Robert Lehmann <robert.lehmann@sitec-systems.de>
+Date: Tue, 6 Sep 2016 10:50:26 +0200
+Subject: [PATCH 1011/1014] mach-imx6sx: Add init for lan power enable pin
+
+Enable LAN_PWR_E GPIO on Boot up to initialize the PHY from the
+beginning.
+
+Ticket #1379
+---
+ arch/arm/mach-imx/gpio_label.h  | 1 +
+ arch/arm/mach-imx/mach-imx6sx.c | 2 ++
+ 2 files changed, 3 insertions(+)
+
+diff --git a/arch/arm/mach-imx/gpio_label.h b/arch/arm/mach-imx/gpio_label.h
+index c41c7c9..4f6ecd5 100644
+--- a/arch/arm/mach-imx/gpio_label.h
++++ b/arch/arm/mach-imx/gpio_label.h
+@@ -16,6 +16,7 @@
+ #define GNSS_PWR_E	"gnss_pwr_e"
+ #define K_L_PU_E 	"k_l_pu_e"
+ #define K_L_PU_HALF	"k_l_pu_half"
++#define LAN_PWR_E   "lan_pwr_e"
+ 
+ #define DI2			"di2"
+ #define DI3			"di3"
+diff --git a/arch/arm/mach-imx/mach-imx6sx.c b/arch/arm/mach-imx/mach-imx6sx.c
+index 41efafa..3b0db0e 100644
+--- a/arch/arm/mach-imx/mach-imx6sx.c
++++ b/arch/arm/mach-imx/mach-imx6sx.c
+@@ -113,6 +113,7 @@ static void imx6sx_gpio_setup_score(void)
+ #define S4_WIFI_PWR_E IMX_GPIO_NR(3, 10)
+ #define S4_GSM_PWR_E IMX_GPIO_NR(4, 24)
+ #define S4_SIM_SEL IMX_GPIO_NR(4, 25)
++#define S4_LAN_PWR_E IMX_GPIO_NR(4, 30)
+ #define S4_GNSS_PWR_E 502
+ #define S4_DI2 IMX_GPIO_NR(3, 0)
+ #define S4_DI3 IMX_GPIO_NR(3, 8)
+@@ -142,6 +143,7 @@ static void imx6sx_gpio_setup_s4_native(void)
+ 	gpio_request_export(S4_DI_K30, GPIOF_IN, DI_K30);
+ 	gpio_request_export(S4_K_L_PU_E, GPIOF_OUT_INIT_LOW, K_L_PU_E);
+ 	gpio_request_export(S4_K_L_HALF, GPIOF_OUT_INIT_LOW, K_L_PU_HALF);
++	gpio_request_export(S4_LAN_PWR_E, GPIOF_OUT_INIT_HIGH, LAN_PWR_E);
+ 	pr_info("S4: Finished GPIO native init\n");
+ }
+ 
+-- 
+2.7.4
+

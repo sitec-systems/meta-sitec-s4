@@ -1,0 +1,36 @@
+From fa364126572bff3b617635cfed8d6440fd5d4b6c Mon Sep 17 00:00:00 2001
+From: Robert Lehmann <robert.lehmann@sitec-systems.de>
+Date: Mon, 28 Oct 2019 16:03:42 +0100
+Subject: [PATCH] dts:imx6sx-kcu: Increase drive strength for ethernet pins
+
+Increase the drive strength for tx pins of the rmii interface and both
+signals of the mdio interface
+---
+ arch/arm/boot/dts/imx6sx-kcu.dts | 10 +++++-----
+ 1 file changed, 5 insertions(+), 5 deletions(-)
+
+diff --git a/arch/arm/boot/dts/imx6sx-kcu.dts b/arch/arm/boot/dts/imx6sx-kcu.dts
+index 3c42f503db9..6cd63df9731 100644
+--- a/arch/arm/boot/dts/imx6sx-kcu.dts
++++ b/arch/arm/boot/dts/imx6sx-kcu.dts
+@@ -592,12 +592,12 @@
+ 
+         pinctrl_enet: enet2grp {
+             fsl,pins = <
+-                MX6SX_PAD_ENET1_MDIO__ENET2_MDIO        0xa0b1
+-                MX6SX_PAD_ENET1_MDC__ENET2_MDC          0xa0b1
++                MX6SX_PAD_ENET1_MDIO__ENET2_MDIO        0xa088
++                MX6SX_PAD_ENET1_MDC__ENET2_MDC          0xa088
+                 MX6SX_PAD_ENET2_TX_CLK__ENET2_REF_CLK2  0x3081
+-                MX6SX_PAD_RGMII2_TD0__ENET2_TX_DATA_0   0xa0b1
+-                MX6SX_PAD_RGMII2_TD1__ENET2_TX_DATA_1   0xa0b1
+-                MX6SX_PAD_RGMII2_TX_CTL__ENET2_TX_EN    0xa0b1
++                MX6SX_PAD_RGMII2_TD0__ENET2_TX_DATA_0   0xa088
++                MX6SX_PAD_RGMII2_TD1__ENET2_TX_DATA_1   0xa088
++                MX6SX_PAD_RGMII2_TX_CTL__ENET2_TX_EN    0xa088
+                 MX6SX_PAD_RGMII2_RXC__ENET2_RX_ER		0x3081
+                 MX6SX_PAD_RGMII2_RD0__ENET2_RX_DATA_0   0x3081
+                 MX6SX_PAD_RGMII2_RD1__ENET2_RX_DATA_1   0x3081
+-- 
+2.20.1
+

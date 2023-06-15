@@ -1,0 +1,30 @@
+From 39da6b145a127fda0a89ed136c612f28a80d5d33 Mon Sep 17 00:00:00 2001
+From: Robert Lehmann <robert.lehmann@sitec-systems.de>
+Date: Fri, 22 Dec 2017 09:54:24 +0100
+Subject: [PATCH] imx6sx-s4: Add support for onewire
+
+Ticket #2175
+---
+ arch/arm/boot/dts/imx6sx-s4.dts | 6 ++++++
+ 1 file changed, 6 insertions(+)
+
+diff --git a/arch/arm/boot/dts/imx6sx-s4.dts b/arch/arm/boot/dts/imx6sx-s4.dts
+index 05016d2..eda292a 100644
+--- a/arch/arm/boot/dts/imx6sx-s4.dts
++++ b/arch/arm/boot/dts/imx6sx-s4.dts
+@@ -207,6 +207,12 @@
+ 		reg = <0x20>;
+ 	};
+ 
++	onew: ds2482@18 {
++		compatible = "ds2482";
++		reg = <0x18>;
++		label = "1w";
++	};
++
+ 	/* Driver for PAC1710 0x18 */
+ 	/* Driver for BQ24151 0x6b */
+ 	/* Driver for MPU-9250 0x69 */
+-- 
+2.1.4
+

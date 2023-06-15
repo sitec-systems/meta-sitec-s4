@@ -1,0 +1,30 @@
+From 4af20656c9a88b88bb040bbf37d708a7c51997b5 Mon Sep 17 00:00:00 2001
+From: Robert Lehmann <robert.lehmann@sitec-systems.de>
+Date: Fri, 18 Oct 2019 11:12:28 +0000
+Subject: [PATCH] net:phy:tja110x: Remove auto power manangement option
+
+---
+ drivers/net/phy/tja110x.c | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/drivers/net/phy/tja110x.c b/drivers/net/phy/tja110x.c
+index 254b6a4..0000ade 100755
+--- a/drivers/net/phy/tja110x.c
++++ b/drivers/net/phy/tja110x.c
+@@ -153,11 +153,11 @@ static int nxp_config_init(struct phy_device *phydev)
+ 	case NXP_PHY_ID_TJA1100:
+ 		reg_name = MII_CFG1;
+ 		reg_value = TJA1100_CFG1_LED_EN | CFG1_LED_LINKUP | CFG1_RMII_25MHZ_MODE | 
+-            CFG1_MII_DRIVER | CFG1_AUTO_PWD ;
++            CFG1_MII_DRIVER;
+         if (!managed_mode)
+             reg_value |= TJA1100_CFG1_AUTO_OP;
+ 		reg_mask = TJA1100_CFG1_AUTO_OP |
+-		    TJA1100_CFG1_LED_EN | TJA1100_CFG1_LED_MODE; 
++		    TJA1100_CFG1_LED_EN | TJA1100_CFG1_LED_MODE| CFG1_MII_MODE | CFG1_MII_DRIVER; 
+ 		break;
+ 	case NXP_PHY_ID_TJA1101:
+ 		/* fall through */
+-- 
+2.1.4
+

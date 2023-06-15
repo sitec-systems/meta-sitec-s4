@@ -1,0 +1,60 @@
+From 3b993f14fda35753b04cc74ce032312f9d4fc34e Mon Sep 17 00:00:00 2001
+From: Robert Lehmann <robert.lehmann@sitec-systems.de>
+Date: Mon, 17 Oct 2016 09:57:10 +0000
+Subject: [PATCH 09/12] configs: score: Add command to boot from sd2 and sd3
+
+Add a environment command to boot from sd2. This is required for the S4 device
+because the sd card slot is connected to the sd2 interface. The score evaluation
+board is connected to sd3. So there are two diffrent bootmmc commands. The
+default command is for S4. The evaluation board has a seperate command which is
+named bootmmc_eval.
+
+Ticket #1368
+---
+ include/configs/score.h | 17 +++++++++++++----
+ 1 file changed, 13 insertions(+), 4 deletions(-)
+
+diff --git a/include/configs/score.h b/include/configs/score.h
+index cd8d3e0..78749a1 100644
+--- a/include/configs/score.h
++++ b/include/configs/score.h
+@@ -168,7 +168,7 @@
+     "fdt_high=0xffffffff\0" \
+     "console=ttymxc0\0" \
+     "image=uImage\0" \
+-    "fdt_file=imx6sx-score.dtb\0" \
++    "fdt_file=imx6sx-s4.dtb\0" \
+     "add_args=\0" \
+     "mtdparts=gpmi-nand:512k(ubootenv),8m(kernel),2m(dtb),8m(kernel_backup),2m(dtb_backup),-(rootfs)\0" \
+     "update_nor_sd2=fatload mmc 0:1 ${loadaddr} u-boot.imx && sf probe && sf erase 0x0 0x60000 && sf write ${loadaddr} 0x400 0x60000\0" \
+@@ -191,15 +191,24 @@
+         "bootm ${loadaddr} - ${fdt_addr}\0"
+ 
+ #define CONFIG_BOOT_KERNEL_ROOTFS_MMC \
+-    "rootmmc=/dev/mmcblk2p2 rootwait rw\0" \
+-    "mmckernel=fatload mmc 1:1 ${loadaddr} ${image}\0" \
+-    "mmcfdt=fatload mmc 1:1 ${fdt_addr} ${fdt_file}\0" \
++    "rootmmc=/dev/mmcblk1p2 rootwait rw\0" \
++    "mmckernel=fatload mmc 0:1 ${loadaddr} ${image}\0" \
++    "mmcfdt=fatload mmc 0:1 ${fdt_addr} ${fdt_file}\0" \
+     "mmcargs=setenv bootargs console=${console},${baudrate} uart_from_osc root=${rootmmc} mtdparts=${mtdparts}\0" \
+     "bootmmc=run mmcargs && " \
+         "run mmckernel && " \
+         "run mmcfdt && " \
++        "bootm ${loadaddr} - ${fdt_addr}\0" \
++    "rootmmc_eval=/dev/mmcblk2p2 rootwait rw\0" \
++    "mmckernel_eval=fatload mmc 1:1 ${loadaddr} ${image}\0" \
++    "mmcfdt_eval=fatload mmc 1:1 ${fdt_addr} ${fdt_file}\0" \
++    "mmcargs_eval=setenv bootargs console=${console},${baudrate} uart_from_osc root=${rootmmc_eval} mtdparts=${mtdparts}\0" \
++    "bootmmc_eval=run mmcargs_eval && " \
++        "run mmckernel_eval && " \
++        "run mmcfdt_eval && " \
+         "bootm ${loadaddr} - ${fdt_addr}\0"
+ 
++
+ #define CONFIG_EXTRA_ENV_SETTINGS \
+     CONFIG_MFG_ENV_SETTINGS \
+     CONFIG_BOOT_COMMON \
+-- 
+2.1.4
+

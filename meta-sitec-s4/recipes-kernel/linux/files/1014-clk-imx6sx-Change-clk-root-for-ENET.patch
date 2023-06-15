@@ -1,0 +1,42 @@
+From fa6bbc689f459c95883dde48ce051d9d19995386 Mon Sep 17 00:00:00 2001
+From: Robert Lehmann <robert.lehmann@sitec-systems.de>
+Date: Tue, 6 Sep 2016 11:07:50 +0200
+Subject: [PATCH 1014/1014] clk-imx6sx: Change clk root for ENET
+
+Change the clk root for the ENET core. Now the enet_clk is powered by
+enet_podf clk. This clock is faster than 138 MHz which is required by
+the ENET core to work. Also the rates for the reference clks
+are adjusted to 50 MHz which is the rate of the external reference clk.
+
+Ticket #1379
+---
+ arch/arm/mach-imx/clk-imx6sx.c | 6 +++---
+ 1 file changed, 3 insertions(+), 3 deletions(-)
+
+diff --git a/arch/arm/mach-imx/clk-imx6sx.c b/arch/arm/mach-imx/clk-imx6sx.c
+index 62b61da..a289a49 100644
+--- a/arch/arm/mach-imx/clk-imx6sx.c
++++ b/arch/arm/mach-imx/clk-imx6sx.c
+@@ -467,7 +467,7 @@ static void __init imx6sx_clocks_init(struct device_node *ccm_node)
+ 
+ 	/* CCGR3 */
+ 	clks[IMX6SX_CLK_M4]           = imx_clk_gate2("m4",            "m4_podf",           base + 0x74, 2);
+-	clks[IMX6SX_CLK_ENET]         = imx_clk_gate2("enet",          "ipg",               base + 0x74, 4);
++	clks[IMX6SX_CLK_ENET]         = imx_clk_gate2("enet",          "enet_podf",         base + 0x74, 4);
+ 	clks[IMX6SX_CLK_ENET_AHB]     = imx_clk_gate2("enet_ahb",      "enet_sel",          base + 0x74, 4);
+ 	clks[IMX6SX_CLK_DISPLAY_AXI]  = imx_clk_gate2("display_axi",   "display_podf",      base + 0x74, 6);
+ 	clks[IMX6SX_CLK_LCDIF2_PIX]   = imx_clk_gate2("lcdif2_pix",    "lcdif2_sel",        base + 0x74, 8);
+@@ -609,8 +609,8 @@ static void __init imx6sx_clocks_init(struct device_node *ccm_node)
+ 	imx_clk_set_parent(clks[IMX6SX_CLK_ENET_PRE_SEL], clks[IMX6SX_CLK_PLL2_PFD2]);
+ 	imx_clk_set_parent(clks[IMX6SX_CLK_ENET_SEL], clks[IMX6SX_CLK_ENET_PODF]);
+ 	imx_clk_set_rate(clks[IMX6SX_CLK_ENET_PODF], 200000000);
+-	imx_clk_set_rate(clks[IMX6SX_CLK_ENET_REF], 125000000);
+-	imx_clk_set_rate(clks[IMX6SX_CLK_ENET2_REF], 125000000);
++	imx_clk_set_rate(clks[IMX6SX_CLK_ENET_REF], 50000000);
++	imx_clk_set_rate(clks[IMX6SX_CLK_ENET2_REF], 50000000);
+ 
+ 	/* Audio clocks */
+ 	imx_clk_set_rate(clks[IMX6SX_CLK_PLL4_AUDIO_DIV], 393216000);
+-- 
+2.7.4
+

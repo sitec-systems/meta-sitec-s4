@@ -1,0 +1,33 @@
+From 69c7ad1de5c6a06fd1bb937a7b6d196e598dda3c Mon Sep 17 00:00:00 2001
+From: Robert Lehmann <robert.lehmann@sitec-systems.de>
+Date: Mon, 17 Oct 2016 10:00:37 +0000
+Subject: [PATCH 10/12] configs: score: Rename update_nor command
+
+Like the command for booting from sd the command for updating the nor
+flash is renamed. The default command is named update_nor and reads the
+new u-boot image from the sd_card on sd2 (S4). To update the nor from
+the score evaluation board use the command update_nor_eval.
+
+Ticket #1368
+---
+ include/configs/score.h | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/include/configs/score.h b/include/configs/score.h
+index 78749a1..a15074c 100644
+--- a/include/configs/score.h
++++ b/include/configs/score.h
+@@ -171,8 +171,8 @@
+     "fdt_file=imx6sx-s4.dtb\0" \
+     "add_args=\0" \
+     "mtdparts=gpmi-nand:512k(ubootenv),8m(kernel),2m(dtb),8m(kernel_backup),2m(dtb_backup),-(rootfs)\0" \
+-    "update_nor_sd2=fatload mmc 0:1 ${loadaddr} u-boot.imx && sf probe && sf erase 0x0 0x60000 && sf write ${loadaddr} 0x400 0x60000\0" \
+-    "update_nor_sd3=fatload mmc 1:1 ${loadaddr} u-boot.imx && sf probe && sf erase 0x0 0x60000 && sf write ${loadaddr} 0x400 0x60000\0"
++    "update_nor=fatload mmc 0:1 ${loadaddr} u-boot.imx && sf probe && sf erase 0x0 0x60000 && sf write ${loadaddr} 0x400 0x60000\0" \
++    "update_nor_eval=fatload mmc 1:1 ${loadaddr} u-boot.imx && sf probe && sf erase 0x0 0x60000 && sf write ${loadaddr} 0x400 0x60000\0"
+ 
+ #define CONFIG_BOOT_KERNEL_ROOTFS_NAND \
+     "getrootname=if test $root_alt -eq 0; then setenv rootname rootfs; else; setenv rootname rootfs_alt; fi;\0" \
+-- 
+2.1.4
+

@@ -1,0 +1,60 @@
+From 03b3ea3b5229dd23a50c9e139a5f55ff1cb8f784 Mon Sep 17 00:00:00 2001
+From: Robert Lehmann <robert.lehmann@sitec-systems.de>
+Date: Mon, 17 Oct 2016 08:09:26 +0000
+Subject: [PATCH] dts: imx6sx-s4: Add init for CAN2 Controller
+
+Add dts structure for MCP25625 CAN controller which controls the CAN2 interface.
+The communication inteface for the controller is SPI3.
+
+Ticket #1417
+---
+ arch/arm/boot/dts/imx6sx-s4.dts | 19 +++++++++++++++++--
+ 1 file changed, 17 insertions(+), 2 deletions(-)
+
+diff --git a/arch/arm/boot/dts/imx6sx-s4.dts b/arch/arm/boot/dts/imx6sx-s4.dts
+index 28ca36a..9db9d09 100644
+--- a/arch/arm/boot/dts/imx6sx-s4.dts
++++ b/arch/arm/boot/dts/imx6sx-s4.dts
+@@ -37,7 +37,13 @@
+             gpios = <&gpio3 20 GPIO_ACTIVE_HIGH>;
+         };
+     };
+-
++	clocks {
++		clk20M: can_clock {
++			compatible = "fixed-clock";
++			#clock-cells = <0>;
++			clock-frequency = <20000000>;
++		};
++	};
+ };
+ 
+ &cpu0 {
+@@ -257,7 +263,7 @@
+ 				regulator-always-on;
+ 			};
+ 
+-			vgen1_reg: vgen1 {
++			Vgen1_reg: vgen1 {
+ 				regulator-min-microvolt = <800000>;
+ 				regulator-max-microvolt = <1550000>;
+ 				regulator-always-on;
+@@ -313,6 +319,15 @@
+ 		supply-gpio = <506>;
+ 		standby-gpio = <504>;
+ 	};
++	
++	spidev1: spi@1 {
++		compatible = "microchip,mcp2515";
++		spi-max-frequency = <1000000>;
++		reg = <1>;
++		clocks = <&clk20M>;
++		interrupt-parent = <&gpio3>;
++		interrupts = <15 GPIO_ACTIVE_LOW>;
++	};
+ };
+ 
+ &gpmi {
+-- 
+2.1.4
+

@@ -1,0 +1,46 @@
+From 2f5f8c64b89f9e5b56cf54c5a2e701ab370f606e Mon Sep 17 00:00:00 2001
+From: Robert Lehmann <robert.lehmann@sitec-systems.de>
+Date: Mon, 17 Oct 2016 10:03:14 +0000
+Subject: [PATCH 11/12] configs: score: Change filenames for dtbs
+
+For both bootmmc commands diffrent fdt filenames are used. The filenames are hardcoded
+in the mmcfdt commands.
+
+Ticket #1368
+---
+ include/configs/score.h | 5 ++---
+ 1 file changed, 2 insertions(+), 3 deletions(-)
+
+diff --git a/include/configs/score.h b/include/configs/score.h
+index a15074c..613b990 100644
+--- a/include/configs/score.h
++++ b/include/configs/score.h
+@@ -168,7 +168,6 @@
+     "fdt_high=0xffffffff\0" \
+     "console=ttymxc0\0" \
+     "image=uImage\0" \
+-    "fdt_file=imx6sx-s4.dtb\0" \
+     "add_args=\0" \
+     "mtdparts=gpmi-nand:512k(ubootenv),8m(kernel),2m(dtb),8m(kernel_backup),2m(dtb_backup),-(rootfs)\0" \
+     "update_nor=fatload mmc 0:1 ${loadaddr} u-boot.imx && sf probe && sf erase 0x0 0x60000 && sf write ${loadaddr} 0x400 0x60000\0" \
+@@ -193,7 +192,7 @@
+ #define CONFIG_BOOT_KERNEL_ROOTFS_MMC \
+     "rootmmc=/dev/mmcblk1p2 rootwait rw\0" \
+     "mmckernel=fatload mmc 0:1 ${loadaddr} ${image}\0" \
+-    "mmcfdt=fatload mmc 0:1 ${fdt_addr} ${fdt_file}\0" \
++    "mmcfdt=fatload mmc 0:1 ${fdt_addr} imx6sx-s4.dtb\0" \
+     "mmcargs=setenv bootargs console=${console},${baudrate} uart_from_osc root=${rootmmc} mtdparts=${mtdparts}\0" \
+     "bootmmc=run mmcargs && " \
+         "run mmckernel && " \
+@@ -201,7 +200,7 @@
+         "bootm ${loadaddr} - ${fdt_addr}\0" \
+     "rootmmc_eval=/dev/mmcblk2p2 rootwait rw\0" \
+     "mmckernel_eval=fatload mmc 1:1 ${loadaddr} ${image}\0" \
+-    "mmcfdt_eval=fatload mmc 1:1 ${fdt_addr} ${fdt_file}\0" \
++    "mmcfdt_eval=fatload mmc 1:1 ${fdt_addr} imx6x-score.dtb\0" \
+     "mmcargs_eval=setenv bootargs console=${console},${baudrate} uart_from_osc root=${rootmmc_eval} mtdparts=${mtdparts}\0" \
+     "bootmmc_eval=run mmcargs_eval && " \
+         "run mmckernel_eval && " \
+-- 
+2.1.4
+

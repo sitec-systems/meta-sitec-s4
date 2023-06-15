@@ -1,0 +1,15 @@
+ACTION!="add|change|move|bind", GOTO="ublox_lara_r6_end"
+SUBSYSTEMS=="usb", ATTRS{idVendor}=="05c6", ATTRS{idProduct}=="908b", GOTO="ublox_lara_r6_ports"
+GOTO="ublox_lara_r6_end"
+
+LABEL="ublox_lara_r6_ports"
+SUBSYSTEMS=="usb", ATTRS{bInterfaceNumber}=="?*", ENV{.USB_IF_NUM}="$attr{bInterfaceNumber}"
+
+# Diagnostic port
+ENV{.USB_IF_NUM}=="00", ENV{ID_MM_PORT_IGNORE}="1", SYMLINK+="ttyDIAG"
+
+ENV{.USB_IF_NUM}=="01", SYMLINK+="ttyMODEMA0"
+ENV{.USB_IF_NUM}=="02", SYMLINK+="ttyMODEMA1"
+ENV{.USB_IF_NUM}=="03", SYMLINK+="ttyMODEMA2"
+
+LABEL="ublox_lara_r6_end"

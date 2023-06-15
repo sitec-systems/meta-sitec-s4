@@ -1,0 +1,417 @@
+From 4d89bcabeed58ef86740a640bf935dc2a31998d9 Mon Sep 17 00:00:00 2001
+From: Robert Lehmann <robert.lehmann@sitec-systems.de>
+Date: Thu, 13 Sep 2018 09:10:37 +0200
+Subject: [PATCH 9022/9022] mach-imx6sx: Remove gpio init from c file
+
+Ticket #2539
+---
+ arch/arm/mach-imx/mach-imx6sx.c | 354 +++++++++++-----------------------------
+ 1 file changed, 92 insertions(+), 262 deletions(-)
+
+diff --git a/arch/arm/mach-imx/mach-imx6sx.c b/arch/arm/mach-imx/mach-imx6sx.c
+index 01b6ebf..0846c96 100644
+--- a/arch/arm/mach-imx/mach-imx6sx.c
++++ b/arch/arm/mach-imx/mach-imx6sx.c
+@@ -7,307 +7,137 @@
+  * published by the Free Software Foundation.
+  */
+ 
++#include <asm/mach/arch.h>
++#include <asm/mach/map.h>
++#include <linux/gpio.h>
+ #include <linux/irqchip.h>
+-#include <linux/of_platform.h>
+-#include <linux/phy.h>
+-#include <linux/regmap.h>
+ #include <linux/mfd/syscon.h>
+ #include <linux/mfd/syscon/imx6q-iomuxc-gpr.h>
+-#include <linux/gpio.h>
+-#include <asm/mach/arch.h>
+-#include <asm/mach/map.h>
+ #include <linux/micrel_phy.h>
++#include <linux/of_platform.h>
++#include <linux/phy.h>
++#include <linux/regmap.h>
+ 
+ #include "common.h"
+-#include "hardware.h"
+ #include "cpuidle.h"
+ #include "gpio_label.h"
++#include "hardware.h"
+ 
+-static int ar8031_phy_fixup(struct phy_device *dev)
+-{
+-	u16 val;
+-
+-	/* Set RGMII IO voltage to 1.8V */
+-	phy_write(dev, 0x1d, 0x1f);
+-	phy_write(dev, 0x1e, 0x8);
+-
+-	/* disable phy AR8031 SmartEEE function. */
+-	phy_write(dev, 0xd, 0x3);
+-	phy_write(dev, 0xe, 0x805d);
+-	phy_write(dev, 0xd, 0x4003);
+-	val = phy_read(dev, 0xe);
+-	val &= ~(0x1 << 8);
+-	phy_write(dev, 0xe, val);
+-
+-	/* introduce tx clock delay */
+-	phy_write(dev, 0x1d, 0x5);
+-	val = phy_read(dev, 0x1e);
+-	val |= 0x0100;
+-	phy_write(dev, 0x1e, val);
++static int ar8031_phy_fixup(struct phy_device *dev) {
++    u16 val;
+ 
+-	return 0;
+-}
++    /* Set RGMII IO voltage to 1.8V */
++    phy_write(dev, 0x1d, 0x1f);
++    phy_write(dev, 0x1e, 0x8);
+ 
+-static int ksz8091_phy_fixup(struct phy_device *dev)
+-{
+-	u16 val;
++    /* disable phy AR8031 SmartEEE function. */
++    phy_write(dev, 0xd, 0x3);
++    phy_write(dev, 0xe, 0x805d);
++    phy_write(dev, 0xd, 0x4003);
++    val = phy_read(dev, 0xe);
++    val &= ~(0x1 << 8);
++    phy_write(dev, 0xe, val);
+ 
+-	// Disable PME and enable LED0
+-	val = phy_read(dev, 0x16);
+-	val &= ~(0x8000);
+-	phy_write(dev, 0x16, val);
+-	
+-	// Setting LED mode to Mode 01
+-	val = phy_read(dev, 0x1F);
+-	val |= 0x0010;
+-	phy_write(dev, 0x1F, val);
+-	
+-	return 0;
+-}
++    /* introduce tx clock delay */
++    phy_write(dev, 0x1d, 0x5);
++    val = phy_read(dev, 0x1e);
++    val |= 0x0100;
++    phy_write(dev, 0x1e, val);
+ 
+-#define PHY_ID_AR8031   0x004dd074
+-static void __init imx6sx_enet_phy_init(void)
+-{
+-	if (IS_BUILTIN(CONFIG_PHYLIB)) {
+-		phy_register_fixup_for_uid(PHY_ID_AR8031, 0xffffffff,
+-								   ar8031_phy_fixup);
+-		phy_register_fixup_for_uid(PHY_ID_KSZ8081, MICREL_PHY_ID_MASK,
+-								   ksz8091_phy_fixup);
+-	}
+-	
++    return 0;
+ }
+ 
++static int ksz8091_phy_fixup(struct phy_device *dev) {
++    u16 val;
+ 
+-static void __init imx6sx_enet_clk_sel(void)
+-{
+-	struct regmap *gpr;
++    // Disable PME and enable LED0
++    val = phy_read(dev, 0x16);
++    val &= ~(0x8000);
++    phy_write(dev, 0x16, val);
+ 
+-	gpr = syscon_regmap_lookup_by_compatible("fsl,imx6sx-iomuxc-gpr");
+-	if (IS_ERR(gpr)) {
+-		pr_err("failed to find fsl,imx6sx-iomux-gpr regmap\n");
+-		return;
+-	}
+-    if (of_machine_is_compatible("fsl,imx6sx-s4")) {
+-		regmap_update_bits(gpr, IOMUXC_GPR1,
+-						   IMX6SX_GPR1_FEC_CLOCK_MUX_SEL_MASK, IMX6SX_GPR1_FEC_CLOCK_MUX_SEL_MASK);
+-		regmap_update_bits(gpr, IOMUXC_GPR1,
+-						   IMX6SX_GPR1_FEC_CLOCK_PAD_DIR_MASK, 0);
+-	} else {
+-		regmap_update_bits(gpr, IOMUXC_GPR1,
+-						   IMX6SX_GPR1_FEC_CLOCK_MUX_SEL_MASK, 0);
+-		regmap_update_bits(gpr, IOMUXC_GPR1,
+-						   IMX6SX_GPR1_FEC_CLOCK_PAD_DIR_MASK, 0);
+-	}
+-}
++    // Setting LED mode to Mode 01
++    val = phy_read(dev, 0x1F);
++    val |= 0x0010;
++    phy_write(dev, 0x1F, val);
+ 
+-static inline void imx6sx_enet_init(void)
+-{
+-	imx6_enet_mac_init("fsl,imx6sx-fec", "fsl,imx6sx-ocotp");
+-	imx6sx_enet_phy_init();
+-	imx6sx_enet_clk_sel();
++    return 0;
+ }
+ 
+-static void gpio_request_export(int gpio_num, int def_mode, char *label)
+-{
+-	int err;
+-	err = gpio_request_one(gpio_num, def_mode, label);
+-	if (err) {
+-		pr_warn("Can't request GPIO %i\n", gpio_num);
+-		return;
+-	}
+-
+-	err = gpio_export(gpio_num, true);
+-	if (err) {
+-		pr_warn("Can't export GPIO %i\n", gpio_num);
+-	}
++#define PHY_ID_AR8031 0x004dd074
++static void __init imx6sx_enet_phy_init(void) {
++    if (IS_BUILTIN(CONFIG_PHYLIB)) {
++        phy_register_fixup_for_uid(PHY_ID_AR8031, 0xffffffff, ar8031_phy_fixup);
++        phy_register_fixup_for_uid(PHY_ID_KSZ8081, MICREL_PHY_ID_MASK,
++                                   ksz8091_phy_fixup);
++    }
+ }
+ 
+-#define SCORE_CAN1_EN IMX_GPIO_NR(2, 19)
+-#define SCORE_CAN1_TERM IMX_GPIO_NR(3, 22)
+-#define SCORE_CAN2_EN IMX_GPIO_NR(2, 14)
+-#define SCORE_CAN2_TERM IMX_GPIO_NR(1, 8)
+-static void imx6sx_gpio_setup_score(void)
+-{
+-    gpio_request_export(SCORE_CAN1_EN, GPIOF_OUT_INIT_HIGH, CAN1_EN);
+-    gpio_request_export(SCORE_CAN1_TERM, GPIOF_OUT_INIT_LOW, CAN1_TERM);
+-    gpio_request_export(SCORE_CAN2_EN, GPIOF_OUT_INIT_HIGH, CAN2_EN);
+-    gpio_request_export(SCORE_CAN2_TERM, GPIOF_OUT_INIT_LOW, CAN2_TERM);
+-}
++static void __init imx6sx_enet_clk_sel(void) {
++    struct regmap *gpr;
+ 
+-#define S4_TEMP_IRQ IMX_GPIO_NR(1, 8)
+-#define S4_ACC_IRQ IMX_GPIO_NR(1, 9)
+-#define S4_FC_IRQ IMX_GPIO_NR(1, 2)
+-#define S4_PWR_ALERT IMX_GPIO_NR(1, 0)
+-#define S4_I2C_IRQ IMX_GPIO_NR(1, 1)
+-#define S4_GSM_RI IMX_GPIO_NR(2, 15)
+-#define S4_LIN_E IMX_GPIO_NR(2, 10)
+-#define S4_DI_K30 IMX_GPIO_NR(2, 12)
+-#define S4_DI1 IMX_GPIO_NR(3, 24)
+-#define S4_DI2 IMX_GPIO_NR(3, 21)
+-#define S4_DI3 IMX_GPIO_NR(3, 16)
+-#define S4_DO_IRQ IMX_GPIO_NR(3, 27)
+-#define S4_DI_K15 IMX_GPIO_NR(3, 26)
+-#define S4_GSM_E_RST IMX_GPIO_NR(3, 9)
+-#define S4_GSM_IGN IMX_GPIO_NR(3, 1)
+-#define S4_HOST2BT IMX_GPIO_NR(3, 11)
+-#define S4_HOST2WL IMX_GPIO_NR(3, 10)
+-#define S4_OTG_DRVBUS IMX_GPIO_NR(1, 13)
+-#define S4_SIM_SEL IMX_GPIO_NR(1, 11)
+-#define S4_KILL_4P IMX_GPIO_NR(3, 18)
+-#define S4_K_L_PU_E IMX_GPIO_NR(4, 30)
+-#define S4_K_L_HALF IMX_GPIO_NR(4, 24)
+-#define S4_BUZZER IMX_GPIO_NR(1, 12)
+-static void imx6sx_gpio_setup_s4_native(void)
+-{
+-	pr_info("S4: Doing GPIO native init\n");
+-	gpio_request_export(S4_TEMP_IRQ, GPIOF_IN, TEMP_IRQ);
+-	gpio_request_export(S4_ACC_IRQ, GPIOF_IN, ACC_IRQ);
+-	gpio_request_export(S4_FC_IRQ, GPIOF_IN, FC_IRQ);
+-	gpio_request_export(S4_PWR_ALERT, GPIOF_IN, PWR_ALERT);
+-	gpio_request_export(S4_I2C_IRQ, GPIOF_IN, I2C_IRQ);
+-	gpio_request_export(S4_GSM_RI, GPIOF_IN, GSM_RI);
+-	gpio_request_export(S4_LIN_E, GPIOF_OUT_INIT_LOW, LIN_E);
+-	gpio_request_export(S4_DI1, GPIOF_IN, DI1);
+-	gpio_request_export(S4_DI2, GPIOF_IN, DI2);
+-	gpio_request_export(S4_DI3, GPIOF_IN, DI3);
+-	gpio_request_export(S4_DO_IRQ, GPIOF_IN, DO_IRQ);
+-	gpio_request_export(S4_DI_K15, GPIOF_IN, DI_K15);
+-	gpio_request_export(S4_GSM_E_RST, GPIOF_OUT_INIT_LOW, GSM_E_RST);
+-	gpio_request_export(S4_GSM_IGN, GPIOF_OUT_INIT_LOW, GSM_IGN);
+-	gpio_request_export(S4_HOST2BT, GPIOF_IN, HOST2BT);
+-	gpio_request_export(S4_HOST2WL, GPIOF_IN, HOST2WL);
+-	gpio_request_export(S4_SIM_SEL, GPIOF_OUT_INIT_LOW, SIM_SEL);
+-	gpio_request_export(S4_K_L_PU_E, GPIOF_OUT_INIT_LOW, K_L_PU_E);
+-	gpio_request_export(S4_K_L_HALF, GPIOF_OUT_INIT_LOW, K_L_PU_HALF);
+-	gpio_request_export(S4_BUZZER, GPIOF_OUT_INIT_LOW, BUZZER);
+-	gpio_request_export(S4_OTG_DRVBUS, GPIOF_OUT_INIT_LOW, OTG_DRVBUS);
+-	pr_info("S4: Finished GPIO native init\n");
+-}
+-/*
+- * Port Expander Port Mapping
+- *   IO0_0 : LAN_PWR_E
+- *   IO0_1 : IO3 - 5P_EXT_E
+- *   IO0_2 : IO1 - CAN2_E - no export
+- *   IO0_3 : IO4 - 5P_ISO_E
+- *   IO0_4 : IO0 - CAN1_TERM
+- *   IO0_5 : IO5 - 
+- *   IO0_6 : IO2 - CAN2_TERM
+- *   IO0_7 : DO1_OUT
+- *   
+- *   IO1_0 : DO1_STATE
+- *   IO1_1 : DO2_STATE
+- *   IO1_2 : DO2_OUT
+- *   IO1_3 : DO3_OUT
+- *   IO1_4 : DO3_STATE
+- *   IO1_5 : GNSS_PWR_E
+- *   IO1_6 : GSM_PWR_E
+- *   IO1_7 : WLAN_PWR_E
+- */
+-#define S4_LAN_PWR_E 496
+-#define S4_5P_EXT_E 497
+-#define S4_CAN2_E 498
+-#define S4_5P_ISO_E 499
+-#define S4_CAN1_TERM 500
+-// undefined 501
+-#define S4_CAN2_TERM 502
+-#define S4_DO1_OUT 503
+-#define S4_DO1_STATE 504
+-#define S4_DO2_STATE 505
+-#define S4_DO2_OUT 506
+-#define S4_DO3_OUT 507
+-#define S4_DO3_STATE 508
+-#define S4_GNSS_PWR_E 509
+-#define S4_GSM_PWR_E 510
+-#define S4_WIFI_PWR_E 511
+-
+-static void imx6sx_gpio_setup_s4_expander(void)
+-{
+-	pr_info("S4: Doing GPIO expander init\n");
+-	gpio_request_export(S4_WIFI_PWR_E, GPIOF_OUT_INIT_HIGH, WIFI_PWR_E);
+-	gpio_request_export(S4_LAN_PWR_E, GPIOF_OUT_INIT_HIGH, LAN_PWR_E);
+-	// TODO: change default state of Voltage
+-	gpio_request_export(S4_5P_EXT_E, GPIOF_OUT_INIT_HIGH, V5P_EXT_E);
+-	gpio_request_export(S4_5P_ISO_E, GPIOF_OUT_INIT_HIGH, V5P_ISO_E);
+-	gpio_request_export(S4_CAN1_TERM, GPIOF_OUT_INIT_LOW, CAN1_TERM);
+-	gpio_request_export(S4_CAN2_TERM, GPIOF_OUT_INIT_LOW, CAN2_TERM);
+-	gpio_request_one(S4_CAN2_E, GPIOF_OUT_INIT_HIGH, CAN2_EN);
+-	gpio_request_export(S4_DO1_OUT, GPIOF_OUT_INIT_LOW, DO1_OUT);
+-	gpio_request_export(S4_DO1_STATE, GPIOF_IN, DO1_STATE);
+-	gpio_request_export(S4_DO2_OUT, GPIOF_OUT_INIT_LOW, DO2_OUT);
+-	gpio_request_export(S4_DO2_STATE, GPIOF_IN, DO2_STATE);
+-	gpio_request_export(S4_DO3_OUT, GPIOF_OUT_INIT_LOW, DO3_OUT);
+-	gpio_request_export(S4_DO3_STATE, GPIOF_IN, DO3_STATE);
+-	gpio_request_export(S4_GNSS_PWR_E, GPIOF_OUT_INIT_LOW, GNSS_PWR_E);
+-	gpio_request_export(S4_GSM_PWR_E, GPIOF_OUT_INIT_LOW, GSM_PWR_E);
+-	pr_info("S4: Finished GPIO expander init\n");
+-}
+-
+-static void imx6sx_gpio_native_init(void)
+-{
+-    if (of_machine_is_compatible("fsl,imx6sx-score")) {
+-        imx6sx_gpio_setup_score();
+-	} else if (of_machine_is_compatible("fsl,imx6sx-s4")) {
+-		imx6sx_gpio_setup_s4_native();
+-	}
++    gpr = syscon_regmap_lookup_by_compatible("fsl,imx6sx-iomuxc-gpr");
++    if (IS_ERR(gpr)) {
++        pr_err("failed to find fsl,imx6sx-iomux-gpr regmap\n");
++        return;
++    }
++    if (of_machine_is_compatible("fsl,imx6sx-s4")) {
++        regmap_update_bits(gpr, IOMUXC_GPR1, IMX6SX_GPR1_FEC_CLOCK_MUX_SEL_MASK,
++                           IMX6SX_GPR1_FEC_CLOCK_MUX_SEL_MASK);
++        regmap_update_bits(gpr, IOMUXC_GPR1, IMX6SX_GPR1_FEC_CLOCK_PAD_DIR_MASK,
++                           0);
++    } else {
++        regmap_update_bits(gpr, IOMUXC_GPR1, IMX6SX_GPR1_FEC_CLOCK_MUX_SEL_MASK,
++                           0);
++        regmap_update_bits(gpr, IOMUXC_GPR1, IMX6SX_GPR1_FEC_CLOCK_PAD_DIR_MASK,
++                           0);
++    }
+ }
+ 
+-static void imx6sx_gpio_expander_init(void)
+-{
+-	if (of_machine_is_compatible("fsl,imx6sx-s4")) {
+-		imx6sx_gpio_setup_s4_expander();
+-	}
++static inline void imx6sx_enet_init(void) {
++    imx6_enet_mac_init("fsl,imx6sx-fec", "fsl,imx6sx-ocotp");
++    imx6sx_enet_phy_init();
++    imx6sx_enet_clk_sel();
+ }
+ 
+-static void __init imx6sx_init_machine(void)
+-{
+-	struct device *parent;
++static void __init imx6sx_init_machine(void) {
++    struct device *parent;
+ 
+-	parent = imx_soc_device_init();
+-	if (parent == NULL)
+-		pr_warn("failed to initialize soc device\n");
++    parent = imx_soc_device_init();
++    if (parent == NULL) pr_warn("failed to initialize soc device\n");
+ 
+-	of_platform_populate(NULL, of_default_bus_match_table, NULL, parent);
++    of_platform_populate(NULL, of_default_bus_match_table, NULL, parent);
+ 
+-	imx6sx_enet_init();
+-	imx_anatop_init();
+-	imx6sx_pm_init();
+-	imx6sx_gpio_native_init();
++    imx6sx_enet_init();
++    imx_anatop_init();
++    imx6sx_pm_init();
+ }
+ 
+-static void __init imx6sx_init_irq(void)
+-{
+-	imx_gpc_check_dt();
+-	imx_init_revision_from_anatop();
+-	imx_init_l2cache();
+-	imx_src_init();
+-	irqchip_init();
++static void __init imx6sx_init_irq(void) {
++    imx_gpc_check_dt();
++    imx_init_revision_from_anatop();
++    imx_init_l2cache();
++    imx_src_init();
++    irqchip_init();
+ }
+ 
+-static void __init imx6sx_init_late(void)
+-{
+-	imx6sx_gpio_expander_init();
+-	if (IS_ENABLED(CONFIG_ARM_IMX6Q_CPUFREQ))
+-		platform_device_register_simple("imx6q-cpufreq", -1, NULL, 0);
++static void __init imx6sx_init_late(void) {
++    if (IS_ENABLED(CONFIG_ARM_IMX6Q_CPUFREQ))
++        platform_device_register_simple("imx6q-cpufreq", -1, NULL, 0);
+ 
+-	imx6sx_cpuidle_init();
++    imx6sx_cpuidle_init();
+ }
+ 
+-static void __init imx6sx_map_io(void)
+-{
+-	debug_ll_io_init();
+-	imx6_pm_map_io();
+-	imx_busfreq_map_io();
++static void __init imx6sx_map_io(void) {
++    debug_ll_io_init();
++    imx6_pm_map_io();
++    imx_busfreq_map_io();
+ }
+ 
+-static const char * const imx6sx_dt_compat[] __initconst = {
+-	"fsl,imx6sx",
+-	NULL,
++static const char *const imx6sx_dt_compat[] __initconst = {
++    "fsl,imx6sx", NULL,
+ };
+ 
+ DT_MACHINE_START(IMX6SX, "Freescale i.MX6 SoloX (Device Tree)")
+-	.map_io		= imx6sx_map_io,
+-	.init_irq	= imx6sx_init_irq,
+-	.init_machine	= imx6sx_init_machine,
+-	.dt_compat	= imx6sx_dt_compat,
+-	.init_late	= imx6sx_init_late,
+-MACHINE_END
++    .map_io = imx6sx_map_io,
++   .init_irq = imx6sx_init_irq, .init_machine = imx6sx_init_machine,
++   .dt_compat = imx6sx_dt_compat, .init_late = imx6sx_init_late, MACHINE_END
+-- 
+2.7.4
+

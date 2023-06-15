@@ -1,0 +1,38 @@
+From 8cd5840440508afd77dd396b4df6e3e886eb5f3a Mon Sep 17 00:00:00 2001
+From: Robert Lehmann <robert.lehmann@sitec-systems.de>
+Date: Wed, 12 Sep 2018 16:08:22 +0200
+Subject: [PATCH 1032/1032] can: Add mcp2517fd to buildsystem of the kernel
+
+Ticket #2544
+---
+ drivers/net/can/spi/Kconfig  | 6 ++++++
+ drivers/net/can/spi/Makefile | 1 +
+ 2 files changed, 7 insertions(+)
+
+diff --git a/drivers/net/can/spi/Kconfig b/drivers/net/can/spi/Kconfig
+index 148cae5..b1fb256 100644
+--- a/drivers/net/can/spi/Kconfig
++++ b/drivers/net/can/spi/Kconfig
+@@ -7,4 +7,10 @@ config CAN_MCP251X
+ 	---help---
+ 	  Driver for the Microchip MCP251x SPI CAN controllers.
+ 
++config CAN_MCP2517FD
++	tristate "Microchip MCP2517FD SPI CAN controllers"
++	depends on HAS_DMA
++	---help---
++	  Driver for the Microchip MCP2517FD SPI CAN controllers.
++
+ endmenu
+diff --git a/drivers/net/can/spi/Makefile b/drivers/net/can/spi/Makefile
+index 0e86040..b539964 100644
+--- a/drivers/net/can/spi/Makefile
++++ b/drivers/net/can/spi/Makefile
+@@ -4,3 +4,4 @@
+ 
+ 
+ obj-$(CONFIG_CAN_MCP251X)	+= mcp251x.o
++obj-$(CONFIG_CAN_MCP2517FD)	+= mcp2517fd.o
+-- 
+2.7.4
+

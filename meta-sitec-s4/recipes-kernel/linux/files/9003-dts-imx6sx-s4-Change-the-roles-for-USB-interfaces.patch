@@ -1,0 +1,34 @@
+From d2bce2633d9084772143c11ae2b07a41bdc8f430 Mon Sep 17 00:00:00 2001
+From: Robert Lehmann <robert.lehmann@sitec-systems.de>
+Date: Wed, 24 Aug 2016 15:44:56 +0200
+Subject: [PATCH] dts: imx6sx-s4: Change the roles for USB interfaces
+
+The USB1 interface is peripheral and USB2 is in host mode.
+
+Ticket #1247
+---
+ arch/arm/boot/dts/imx6sx-s4.dts | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/arch/arm/boot/dts/imx6sx-s4.dts b/arch/arm/boot/dts/imx6sx-s4.dts
+index 39fd8e4..cb09596 100644
+--- a/arch/arm/boot/dts/imx6sx-s4.dts
++++ b/arch/arm/boot/dts/imx6sx-s4.dts
+@@ -90,12 +90,12 @@
+ };
+ 
+ &usbotg1 {
+-	dr_mode = "host";
++	dr_mode = "periperal";
+ 	status = "okay";
+ };
+ 
+ &usbotg2 {
+-	dr_mode = "peripheral";
++	dr_mode = "host";
+ 	status = "okay";
+ };
+ 
+-- 
+2.7.4
+

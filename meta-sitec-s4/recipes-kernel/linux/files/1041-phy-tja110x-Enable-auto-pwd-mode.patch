@@ -1,0 +1,31 @@
+From db537e74b896ef5de3445c074b880ab69e80672f Mon Sep 17 00:00:00 2001
+From: Robert Lehmann <robert.lehmann@sitec-systems.de>
+Date: Wed, 30 Oct 2019 10:19:12 +0100
+Subject: [PATCH 1041/1041] phy:tja110x: Enable auto pwd mode
+
+---
+ drivers/net/phy/tja110x.c | 5 +++--
+ 1 file changed, 3 insertions(+), 2 deletions(-)
+
+diff --git a/drivers/net/phy/tja110x.c b/drivers/net/phy/tja110x.c
+index 9cdbb887c3d..d3fca73f319 100755
+--- a/drivers/net/phy/tja110x.c
++++ b/drivers/net/phy/tja110x.c
+@@ -152,11 +152,12 @@ static int nxp_config_init(struct phy_device *phydev)
+ 	switch (phydev->phy_id & NXP_PHY_ID_MASK) {
+ 	case NXP_PHY_ID_TJA1100:
+ 		reg_name = MII_CFG1;
+-		reg_value = CFG1_LED_LINKUP | CFG1_RMII_25MHZ_MODE | CFG1_MII_DRIVER | CFG1_TX_500;
++		reg_value = CFG1_LED_LINKUP | CFG1_RMII_25MHZ_MODE | CFG1_MII_DRIVER | CFG1_TX_500 | 
++            CFG1_AUTO_PWD;
+         if (!managed_mode)
+             reg_value |= TJA1100_CFG1_AUTO_OP;
+ 		reg_mask = TJA1100_CFG1_AUTO_OP | TJA1100_CFG1_LED_EN | TJA1100_CFG1_LED_MODE| 
+-            CFG1_MII_MODE | CFG1_MII_DRIVER | CFG1_TX_AMPLITUDE; 
++            CFG1_MII_MODE | CFG1_MII_DRIVER | CFG1_TX_AMPLITUDE | CFG1_AUTO_PWD; 
+ 		break;
+ 	case NXP_PHY_ID_TJA1101:
+ 		/* fall through */
+-- 
+2.20.1
+

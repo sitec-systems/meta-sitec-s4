@@ -1,0 +1,38 @@
+From a87c0bb509c25c0356afe1e6c110f409eacf12e0 Mon Sep 17 00:00:00 2001
+From: Robert Lehmann <robert.lehmann@sitec-systems.de>
+Date: Fri, 26 Jun 2020 10:54:50 +0200
+Subject: [PATCH] configs: score: Change default boot to usb boot
+
+This is necessary to boot via mfgtool every time the test starts again.
+If the test was successful the bootcmd is written to booting from nand.
+
+Ticket #3606
+---
+ include/configs/score.h | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/include/configs/score.h b/include/configs/score.h
+index 5afbceb..9442734 100644
+--- a/include/configs/score.h
++++ b/include/configs/score.h
+@@ -181,7 +181,7 @@
+   "write ${uboot_addr} 0x400 0x60000\0"                                        \
+   "burning=fuse prog -y 0 5 0x2a000030 && fuse prog -y 0 6 0x10\0"             \
+   "bootusb=run mfgtool_args;bootm ${loadaddr} - ${fdt_addr};\0"                \
+-  "bootcmd_mfg=run uboot_flash && run burning && saveenv && run bootusb\0"
++  "bootcmd_mfg=run uboot_flash && run burning && saveenv && run bootmmc\0"
+ 
+ #define CONFIG_BOOT_COMMON                                                     \
+   "fdt_addr=0x83000000\0"                                                      \
+@@ -241,7 +241,7 @@
+   CONFIG_BOOT_COMMON                                                           \
+   CONFIG_BOOT_KERNEL_ROOTFS_NAND                                               \
+   CONFIG_BOOT_KERNEL_ROOTFS_MMC                                                \
+-  "bootcmd=run bootnand\0"
++  "bootcmd=bmode usb\0"
+ 
+ /* Miscellaneous configurable options */
+ #define CONFIG_SYS_LONGHELP
+-- 
+2.27.0
+

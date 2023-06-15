@@ -1,0 +1,105 @@
+From eb25e7d3811d13cecfdf4128722ad61cb668314f Mon Sep 17 00:00:00 2001
+From: Robert Lehmann <robert.lehmann@sitec-systems.de>
+Date: Mon, 27 Jun 2016 10:54:42 +0200
+Subject: [PATCH 1001/1003] mach-imx6sx: Add gpio initialisation.
+
+Add function which initialize the GPIOs with a dedicated state at boot
+up. Although export the GPIOs to userspace. The Value of the GPIOs can
+changed at runtime but not the direction.
+
+Ticket #1239
+---
+ arch/arm/mach-imx/gpio_label.h  | 12 ++++++++++++
+ arch/arm/mach-imx/mach-imx6sx.c | 38 ++++++++++++++++++++++++++++++++++++++
+ 2 files changed, 50 insertions(+)
+ create mode 100644 arch/arm/mach-imx/gpio_label.h
+
+diff --git a/arch/arm/mach-imx/gpio_label.h b/arch/arm/mach-imx/gpio_label.h
+new file mode 100644
+index 0000000..87e7361
+--- /dev/null
++++ b/arch/arm/mach-imx/gpio_label.h
+@@ -0,0 +1,12 @@
++#ifndef __GPIO_LABEL_H__
++#define __GPIO_LABEL_H__
++
++// CAN enable pins. These pins can be high active of low active
++#define CAN1_EN "can1_en"
++#define CAN2_EN "can2_en"
++
++// CAN termination control pins. These pins can be high active or low active
++#define CAN1_TERM "can1_term"
++#define CAN2_TERM "can2_term"
++
++#endif // __GPIO_LABEL_H__
+diff --git a/arch/arm/mach-imx/mach-imx6sx.c b/arch/arm/mach-imx/mach-imx6sx.c
+index 36f2758..0fe7023 100644
+--- a/arch/arm/mach-imx/mach-imx6sx.c
++++ b/arch/arm/mach-imx/mach-imx6sx.c
+@@ -12,11 +12,14 @@
+ #include <linux/regmap.h>
+ #include <linux/mfd/syscon.h>
+ #include <linux/mfd/syscon/imx6q-iomuxc-gpr.h>
++#include <linux/gpio.h>
+ #include <asm/mach/arch.h>
+ #include <asm/mach/map.h>
+ 
+ #include "common.h"
++#include "hardware.h"
+ #include "cpuidle.h"
++#include "gpio_label.h"
+ 
+ static int ar8031_phy_fixup(struct phy_device *dev)
+ {
+@@ -73,6 +76,40 @@ static inline void imx6sx_enet_init(void)
+ 	imx6sx_enet_clk_sel();
+ }
+ 
++static void gpio_request_export(int gpio_num, int def_mode, char *label)
++{
++	int err;
++	err = gpio_request_one(gpio_num, def_mode, label);
++	if (err) {
++		pr_warn("Can't request GPIO %i\n", gpio_num);
++		return;
++	}
++
++	err = gpio_export(gpio_num, true);
++	if (err) {
++		pr_warn("Can't export GPIO %i\n", gpio_num);
++	}
++}
++
++#define SCORE_CAN1_EN IMX_GPIO_NR(2, 19)
++#define SCORE_CAN1_TERM IMX_GPIO_NR(3, 22)
++#define SCORE_CAN2_EN IMX_GPIO_NR(2, 14)
++#define SCORE_CAN2_TERM IMX_GPIO_NR(1, 8)
++static void imx6sx_gpio_setup_score(void)
++{
++    gpio_request_export(SCORE_CAN1_EN, GPIOF_OUT_INIT_HIGH, CAN1_EN);
++    gpio_request_export(SCORE_CAN1_TERM, GPIOF_OUT_INIT_LOW, CAN1_TERM);
++    gpio_request_export(SCORE_CAN2_EN, GPIOF_OUT_INIT_HIGH, CAN2_EN);
++    gpio_request_export(SCORE_CAN2_TERM, GPIOF_OUT_INIT_LOW, CAN2_TERM);
++}
++
++static void imx6sx_gpio_init(void)
++{
++    if (of_machine_is_compatible("fsl,imx6sx-score")) {
++        imx6sx_gpio_setup_score();
++	}
++}
++
+ static void __init imx6sx_init_machine(void)
+ {
+ 	struct device *parent;
+@@ -103,6 +140,7 @@ static void __init imx6sx_init_late(void)
+ 		platform_device_register_simple("imx6q-cpufreq", -1, NULL, 0);
+ 
+ 	imx6sx_cpuidle_init();
++	imx6sx_gpio_init();
+ }
+ 
+ static void __init imx6sx_map_io(void)
+-- 
+1.9.1
+

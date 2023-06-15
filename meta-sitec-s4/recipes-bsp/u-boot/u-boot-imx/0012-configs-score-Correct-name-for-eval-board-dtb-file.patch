@@ -1,0 +1,26 @@
+From f1251c21e97e30b714f9bad47649d5c4013bab85 Mon Sep 17 00:00:00 2001
+From: Robert Lehmann <robert.lehmann@sitec-systems.de>
+Date: Mon, 17 Oct 2016 12:12:09 +0000
+Subject: [PATCH 12/12] configs: score: Correct name for eval board dtb file
+
+Ticket #1368
+---
+ include/configs/score.h | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/include/configs/score.h b/include/configs/score.h
+index 613b990..961e1c4 100644
+--- a/include/configs/score.h
++++ b/include/configs/score.h
+@@ -200,7 +200,7 @@
+         "bootm ${loadaddr} - ${fdt_addr}\0" \
+     "rootmmc_eval=/dev/mmcblk2p2 rootwait rw\0" \
+     "mmckernel_eval=fatload mmc 1:1 ${loadaddr} ${image}\0" \
+-    "mmcfdt_eval=fatload mmc 1:1 ${fdt_addr} imx6x-score.dtb\0" \
++    "mmcfdt_eval=fatload mmc 1:1 ${fdt_addr} imx6sx-score.dtb\0" \
+     "mmcargs_eval=setenv bootargs console=${console},${baudrate} uart_from_osc root=${rootmmc_eval} mtdparts=${mtdparts}\0" \
+     "bootmmc_eval=run mmcargs_eval && " \
+         "run mmckernel_eval && " \
+-- 
+2.1.4
+

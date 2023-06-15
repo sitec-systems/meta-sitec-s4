@@ -1,0 +1,44 @@
+From eaee2d6a5292fc71b5810070336e40854a96763d Mon Sep 17 00:00:00 2001
+From: Robert Lehmann <robert.lehmann@sitec-systems.de>
+Date: Thu, 2 Mar 2017 11:15:42 +0000
+Subject: [PATCH] mach-imx6sx: Remove CAN2_Wake from export
+
+The GPIO for CAN2_WAKE will not be exported by the kernel because this
+GPIO is the interrupt line for the CAN-Controller to the processor.
+
+Ticket #1668
+---
+ arch/arm/mach-imx/mach-imx6sx.c | 3 +--
+ 1 file changed, 1 insertion(+), 2 deletions(-)
+
+diff --git a/arch/arm/mach-imx/mach-imx6sx.c b/arch/arm/mach-imx/mach-imx6sx.c
+index 7de0827..66c8234 100644
+--- a/arch/arm/mach-imx/mach-imx6sx.c
++++ b/arch/arm/mach-imx/mach-imx6sx.c
+@@ -139,7 +139,6 @@ static void imx6sx_gpio_setup_score(void)
+ #define S4_FC_IRQ IMX_GPIO_NR(1, 2)
+ #define S4_PWR_ALERT IMX_GPIO_NR(1, 0)
+ #define S4_I2C_IRQ IMX_GPIO_NR(1, 1)
+-#define S4_CAN2_WAKE IMX_GPIO_NR(1, 3)
+ #define S4_GSM_RI IMX_GPIO_NR(2, 15)
+ #define S4_LIN_E IMX_GPIO_NR(2, 10)
+ #define S4_DI_K30 IMX_GPIO_NR(2, 12)
+@@ -166,7 +165,6 @@ static void imx6sx_gpio_setup_s4_native(void)
+ 	gpio_request_export(S4_FC_IRQ, GPIOF_IN, FC_IRQ);
+ 	gpio_request_export(S4_PWR_ALERT, GPIOF_IN, PWR_ALERT);
+ 	gpio_request_export(S4_I2C_IRQ, GPIOF_IN, I2C_IRQ);
+-	gpio_request_export(S4_CAN2_WAKE, GPIOF_IN, CAN2_WAKE);
+ 	gpio_request_export(S4_GSM_RI, GPIOF_IN, GSM_RI);
+ 	gpio_request_export(S4_LIN_E, GPIOF_OUT_INIT_LOW, LIN_E);
+ 	gpio_request_export(S4_DI1, GPIOF_IN, DI1);
+@@ -230,6 +228,7 @@ static void imx6sx_gpio_setup_s4_expander(void)
+ 	gpio_request_export(S4_5P_ISO_E, GPIOF_OUT_INIT_LOW, V5P_ISO_E);
+ 	gpio_request_export(S4_CAN1_TERM, GPIOF_OUT_INIT_LOW, CAN1_TERM);
+ 	gpio_request_export(S4_CAN2_TERM, GPIOF_OUT_INIT_LOW, CAN2_TERM);
++	gpio_request_one(S4_CAN2_E, GPIOF_OUT_INIT_HIGH, CAN2_EN);
+ 	gpio_request_export(S4_DO1_OUT, GPIOF_OUT_INIT_LOW, DO1_OUT);
+ 	gpio_request_export(S4_DO1_STATE, GPIOF_IN, DO1_STATE);
+ 	gpio_request_export(S4_DO2_OUT, GPIOF_OUT_INIT_LOW, DO2_OUT);
+-- 
+2.1.4
+

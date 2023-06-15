@@ -1,0 +1,279 @@
+From b749c5d20f8411aa41eaf1db4c2da1d10eed7d6e Mon Sep 17 00:00:00 2001
+From: Robert Lehmann <robert.lehmann@sitec-systems.de>
+Date: Mon, 29 Aug 2016 12:57:05 +0200
+Subject: [PATCH 1008/1009] misc: tja1145: Fix read and write access
+
+Fix the functions for reading and writing to the registers of the
+tja1145. A configuration for read and write masks is needed to read and
+write properly.
+
+Ticket #1262
+---
+ drivers/misc/tja1145.c | 127 ++++++++++++++++++++++++++++---------------------
+ 1 file changed, 74 insertions(+), 53 deletions(-)
+
+diff --git a/drivers/misc/tja1145.c b/drivers/misc/tja1145.c
+index cccf196..f1e03dc 100644
+--- a/drivers/misc/tja1145.c
++++ b/drivers/misc/tja1145.c
+@@ -2,17 +2,17 @@
+  * Copyright (C) 2016  sitec systems GmbH
+  *
+  * This library is free software; you can redistribute it and/or modify it under
+- * the terms of the GNU General Public License as published by the Free 
+- * Software Foundation; either version 2.1 of the License, or (at your option) 
++ * the terms of the GNU General Public License as published by the Free
++ * Software Foundation; either version 2.1 of the License, or (at your option)
+  * any later version.
+  *
+  * This library is distributed in the hope that it will be useful, but WITHOUT
+- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or 
++ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+  * FITNESS FOR A PARTICULAR PURPOSE. See the GNU Lesser General Public License
+  * for more details.
+  *
+  * You should have received a copy of the GNU  General Public License
+- * along with this library; if not, write to the Free Software Foundation, 
++ * along with this library; if not, write to the Free Software Foundation,
+  * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110, USA
+  */
+ 
+@@ -25,9 +25,11 @@
+ #include <linux/of.h>
+ #include <linux/mutex.h>
+ 
+-#define TJA1145_REG_ID 0x7e
+-#define TJA1145_ID 0x70
+-#define TJA1145_REG_MODE_CTRL 0x01
++#define TJA1145_REG_ID			0x7e
++#define TJA1145_REG_MAIN_STATUS 0x03
++#define TJA1145_REG_MODE_CTRL	0x01
++
++#define TJA1145_ID 0x74
+ #define TJA1145_MODE_SLEEP 0x01
+ #define TJA1145_MODE_STANDBY 0x04
+ #define TJA1145_MODE_NORMAL 0x07
+@@ -39,29 +41,39 @@ struct tja1145_priv {
+ 
+ struct regmap_config tja1145_regmap_config = {
+ 	.reg_bits = 8,
+-	.val_bits = 8
++	.val_bits = 8,
++	.read_flag_mask = 0x01,
++	.write_flag_mask = 0x00,
+ };
+ 
+-static int tja1145_write_reg(struct device *dev, unsigned int reg, unsigned int val)
++static int tja1145_read_reg(struct device *dev, unsigned int reg, unsigned int *rval)
+ {
+ 	struct tja1145_priv *data = dev_get_drvdata(dev);
+-	unsigned int rval;
+ 	int ret;
+ 
+-	ret = regmap_write(data->regmap, reg, val);
+-	if (ret < 0) {
++	reg = reg << 1;
++	ret = regmap_read(data->regmap, reg, rval);
++	if (reg < 0) {
+ 		return ret;
+ 	}
+ 
+-	ret = regmap_read(data->regmap, reg, &rval);
++	return 0;
++}
++
++static int tja1145_write_reg(struct device *dev, unsigned int reg, unsigned int val)
++{
++	struct tja1145_priv *data = dev_get_drvdata(dev);
++	unsigned int write_reg;
++	int ret;
++
++	write_reg = reg;
++	write_reg = (write_reg << 1);
++
++	ret = regmap_write(data->regmap, write_reg, val);
+ 	if (ret < 0) {
+ 		return ret;
+ 	}
+ 
+-	if (rval != val) {
+-		return -EBUSY;
+-	}
+-	
+ 	return 0;
+ }
+ 
+@@ -72,49 +84,53 @@ static ssize_t tja1145_version_show(struct device *dev,
+ }
+ static DEVICE_ATTR(tja1145_version, S_IRUGO, tja1145_version_show, NULL);
+ 
+-static ssize_t tja1145_mode_store(struct device *dev,
+-								  struct device_attribute *attr,
+-								  const char *buf,
+-								  size_t count)
++ssize_t tja1145_mode_store(struct device *dev,
++						   struct device_attribute *attr,
++						   const char *buf,
++						   size_t count)
+ {
+-	/* struct tja1145_priv *data = dev_get_drvdata(dev); */
+ 	int ret;
+-	
+-	if (strncmp(buf, "normal", count) == 0) {
++	char mode[15];
++
++	strncpy(mode, buf, count -1);
++
++	if (!strncmp(buf, "normal", count - 1)) {
+ 		ret = tja1145_write_reg(dev, TJA1145_REG_MODE_CTRL, TJA1145_MODE_NORMAL);
+ 		if (ret) {
+ 			dev_err(dev, "Can't set operation mode to normal\n");
+ 			return ret;
+ 		}
+-	} else if (strncmp(buf, "standby", count) == 0) {
+-		ret = tja1145_write_reg(dev, TJA1145_REG_MODE_CTRL, TJA1145_MODE_STANDBY);
++		dev_dbg(dev, "Switch to normal mode\n");
++	} else if (!strcmp(mode, "sleep")) {
++		ret = tja1145_write_reg(dev, TJA1145_REG_MODE_CTRL, TJA1145_MODE_SLEEP);
+ 		if (ret) {
+-			dev_err(dev, "Can't set operation mode to standby\n");
++			dev_err(dev, "Can't set operation mode to sleep\n");
+ 			return ret;
+ 		}
+-	} else if (strncmp(buf, "sleep", count) == 0) {
+-		ret = tja1145_write_reg(dev, TJA1145_REG_MODE_CTRL, TJA1145_MODE_SLEEP);
++		dev_dbg(dev, "Switch to normal sleep\n");
++	} else if (!strcmp(mode, "standby")) {
++		ret = tja1145_write_reg(dev, TJA1145_REG_MODE_CTRL, TJA1145_MODE_STANDBY);
+ 		if (ret) {
+-			dev_err(dev, "Can't set operation mode to sleep\n");
++			dev_err(dev, "Can't set operation mode to standby\n");
+ 			return ret;
+ 		}
++		dev_dbg(dev, "Switch to normal standby\n");
+ 	} else {
+-		dev_err(dev, "Unsupported operation mode\n");
++		dev_err(dev, "Unsupported mode\n");
+ 		return -EINVAL;
+ 	}
+ 
+-	return 0;
++	return count;
+ }
+ 
+-static ssize_t tja1145_mode_show(struct device *dev,
+-								 struct device_attribute *attr,
+-								 char *buf)
++ssize_t tja1145_mode_show(struct device *dev,
++						  struct device_attribute *attr,
++						  char *buf)
+ {
+-	struct tja1145_priv *data = dev_get_drvdata(dev);
+ 	unsigned int mode;
+ 	int ret;
+ 
+-	ret = regmap_read(data->regmap, TJA1145_REG_MODE_CTRL, &mode);
++	ret = tja1145_read_reg(dev, TJA1145_REG_MODE_CTRL, &mode);
+ 	if (ret < 0) {
+ 		dev_err(dev, "Can't read mode ctrl register\n");
+ 		return -EBUSY;
+@@ -129,7 +145,6 @@ static ssize_t tja1145_mode_show(struct device *dev,
+ 		return sprintf(buf, "normal");
+ 	}
+ 
+-	
+ 	return sprintf(buf, "Unsupported Operation mode\n");
+ }
+ 
+@@ -147,15 +162,15 @@ static const struct attribute_group tja1145_attr_group = {
+ 
+ static int tja1145_check_devid(struct device *dev)
+ {
+-	struct tja1145_priv *data = dev_get_drvdata(dev);
+ 	unsigned int id;
+ 	int ret;
+ 
+-	ret = regmap_read(data->regmap, TJA1145_REG_ID, &id);
++	ret = tja1145_read_reg(dev, TJA1145_REG_ID, &id);
+ 	if (ret < 0) {
+ 		return ret;
+ 	}
+ 
++	dev_info(dev, "Read ID 0x%2X\n", id);
+ 	if (id != TJA1145_ID) {
+ 		return -ENODEV;
+ 	}
+@@ -165,24 +180,29 @@ static int tja1145_check_devid(struct device *dev)
+ 
+ static int tja1145_init(struct device *dev)
+ {
+-	struct tja1145_priv *data = dev_get_drvdata(dev);
+-	unsigned int mode;
+ 	int ret;
++	unsigned int rval;
+ 
+-	ret = regmap_write(data->regmap, TJA1145_REG_MODE_CTRL, TJA1145_MODE_STANDBY);
++	ret = tja1145_write_reg(dev, TJA1145_REG_MODE_CTRL, TJA1145_MODE_STANDBY);
+ 	if (ret < 0) {
+ 		return ret;
+ 	}
+ 
+-	ret = regmap_read(data->regmap, TJA1145_REG_MODE_CTRL, &mode);
++	ret = tja1145_read_reg(dev, TJA1145_REG_MODE_CTRL, &rval);
+ 	if (ret < 0) {
+ 		return ret;
+ 	}
+ 
+-	if (mode != TJA1145_MODE_STANDBY) {
+-		return -EBUSY;
++	if (rval != TJA1145_MODE_STANDBY) {
++		dev_err(dev, "Device is not in Standby mode, but it should be\n");
++		return -EINVAL;
++	}
++
++	ret = tja1145_read_reg(dev, TJA1145_REG_MAIN_STATUS, &rval);
++	if (ret < 0) {
++		return ret;
+ 	}
+-	
++
+ 	return 0;
+ }
+ 
+@@ -193,6 +213,7 @@ static int tja1145_probe(struct spi_device *client)
+ 	struct device *dev;
+ 	int err = 0;
+ 
++	dev_info(&client->dev, "Begin Init\n");
+ 	err = spi_setup(client);
+ 	if (err < 0) {
+ 		dev_err(&client->dev, "Can't setup SPI\n");
+@@ -218,12 +239,6 @@ static int tja1145_probe(struct spi_device *client)
+ 	dev = data->dev;
+ 	data->regmap = regmap;
+ 
+-	err = sysfs_create_group(&dev->kobj, &tja1145_attr_group);
+-	if (err) {
+-		dev_err(dev, "Can't create sysfs entries\n");
+-		goto exit_free;
+-	}
+-
+ 	err = tja1145_check_devid(dev);
+ 	if (err) {
+ 		if (err == -ENODEV) {
+@@ -241,6 +256,12 @@ static int tja1145_probe(struct spi_device *client)
+ 		goto exit_free;
+ 	}
+ 
++	err = sysfs_create_group(&dev->kobj, &tja1145_attr_group);
++	if (err) {
++		dev_err(dev, "Can't create sysfs entries\n");
++		goto exit_free;
++	}
++
+ 	return 0;
+ 
+ exit_free:
+-- 
+2.7.4
+

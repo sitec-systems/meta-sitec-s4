@@ -1,0 +1,40 @@
+From e1f45652fa574a954996bc686f4d8e71ae02d898 Mon Sep 17 00:00:00 2001
+From: Robert Lehmann <robert.lehmann@sitec-systems.de>
+Date: Mon, 22 May 2017 09:29:50 +0200
+Subject: [PATCH] imx6sx-s4: Add pinmux settings for OTG ID pin
+
+Adding pin muxing settings for the ID pin of the
+usb otg1 interface
+
+Ticket #1840
+---
+ arch/arm/boot/dts/imx6sx-s4.dts | 6 ++++++
+ 1 file changed, 6 insertions(+)
+
+diff --git a/arch/arm/boot/dts/imx6sx-s4.dts b/arch/arm/boot/dts/imx6sx-s4.dts
+index 4243fa6..04c4b73 100644
+--- a/arch/arm/boot/dts/imx6sx-s4.dts
++++ b/arch/arm/boot/dts/imx6sx-s4.dts
+@@ -96,6 +96,7 @@
+ };
+ 
+ &usbotg1 {
++	pinctrl-0 = <&pinctrl_usb_otg_id>;
+ 	dr_mode = "otg";
+ 	srp-disable;
+ 	hnp-disable;
+@@ -443,6 +444,11 @@
+ 			>;
+ 		};
+ 
++		pinctrl_usb_otg_id: usbotgidgrp {
++			fsl,pins = <
++				MX6SX_PAD_GPIO1_IO10__ANATOP_OTG1_ID	0x17059
++			>;
++		};
+ 
+ 		pinctrl_flexcan2: flexcan2grp {
+ 			fsl,pins = <
+-- 
+2.1.4
+

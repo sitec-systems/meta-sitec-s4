@@ -1,0 +1,44 @@
+From 1d25cfb455d3e8131ffd16b8c51c8cdb92e8d115 Mon Sep 17 00:00:00 2001
+From: Robert Lehmann <robert.lehmann@sitec-systems.de>
+Date: Mon, 29 Aug 2016 14:02:13 +0200
+Subject: [PATCH] dts: imx6sx-s4: Rework configuration for tja1145:
+
+Modify the frequency of the spi interface for that device. Although add
+a supply gpio and a standby gpio to the devicetree.
+
+Ticket #1247
+---
+ arch/arm/boot/dts/imx6sx-s4.dts | 9 ++++++---
+ 1 file changed, 6 insertions(+), 3 deletions(-)
+
+diff --git a/arch/arm/boot/dts/imx6sx-s4.dts b/arch/arm/boot/dts/imx6sx-s4.dts
+index 1b0f104..28ca36a 100644
+--- a/arch/arm/boot/dts/imx6sx-s4.dts
++++ b/arch/arm/boot/dts/imx6sx-s4.dts
+@@ -306,9 +306,12 @@
+ 	status = "okay";
+ 
+ 	spidev0: spi@0 {
+-		spi-max-frequency = <4000000>;
++		spi-max-frequency = <1000000>;
+ 		reg = <0>;
+-		compatible = "spidev";
++		spi-cpha;
++		compatible = "nxp,tja1145";
++		supply-gpio = <506>;
++		standby-gpio = <504>;
+ 	};
+ };
+ 
+@@ -455,7 +458,7 @@
+ 			MX6SX_PAD_KEY_COL3__UART5_TX 0x1b0b1
+ 			>;
+ 		};
+-		
++
+         pinctrl_usdhc2: usdhc2grp {
+ 			fsl,pins = <
+ 			MX6SX_PAD_SD2_CMD__USDHC2_CMD		0x17059
+-- 
+2.7.4
+

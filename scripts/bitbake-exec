@@ -1,0 +1,83 @@
+#!/bin/bash
+
+DOCKER_IMAGE_NAME="sitec/oe-s4"
+
+show_usage() {
+    echo "${BASH_SOURCE[0]} [OPTIONS]"
+    echo "options:"
+    echo " -t | --target=<TARGET>   Build a specific target"
+    echo " -s | --shell             Enter dev shell"
+    echo " -b | --build=<DIRECTORY> Use build directory (default: build)"
+    echo " -c | --container         Execute the commands like you are inside the dev container"
+    echo " --skip-image             Skip container image build"
+    echo " -h | --help              Show help text"
+}
+
+OPT_SHELL="no"
+OPT_INSIDE_CONTAINER="no"
+OPT_TARGET=""
+OPT_BUILD="build"
+OPT_SKIP_IMAGE_BUILD="no"
+
+while true; do
+    case "$1" in
+    -t | --target)
+        OPT_TARGET="$2"
+        if ! shift 2; then show_usage; exit 1; fi
+        ;;
+    -b | --build)
+        OPT_BUILD="$2"
+        if ! shift 2; then show_usage; exit 1; fi
+        ;;
+    -s | --shell)
+        OPT_SHELL="yes"
+        shift
+        ;;
+    -c | --container)
+        OPT_INSIDE_CONTAINER="yes"
+        shift
+        ;;
+    --skip-image)
+        OPT_SKIP_IMAGE_BUILD="yes"
+        shift
+        ;;
+    -h | --help)
+        show_usage
+        exit 0
+        ;;
+    *)
+        break
+        ;;
+    esac
+done
+
+if [ "$OPT_INSIDE_CONTAINER" = "no" ]; then
+    if [ "$OPT_SKIP_IMAGE_BUILD" = "no" ]; then
+        # first build container
+        echo "Build container image"
+        docker buildx build -t "$DOCKER_IMAGE_NAME" docker/
+    else
+        echo "Skip container image build"
+    fi
+
+    # create arguments for script running inside the container
+    bitbake_args="-c"
+    if [ "$OPT_SHELL" = "yes" ]; then
+        bitbake_args="$bitbake_args -s"
+    elif [ "$OPT_TARGET" != "" ]; then
+        bitbake_args="$bitbake_args -t $OPT_TARGET"
+    fi
+
+    docker run --rm -ti -v $(pwd):/home/build:rw "$DOCKER_IMAGE_NAME" ./scripts/bitbake-exec $bitbake_args
+    exit
+fi
+
+if [ "$OPT_SHELL" = "yes" -o "$OPT_TARGET" != "" ]; then
+    source init-env -b $OPT_BUILD
+fi
+
+if [ "$OPT_SHELL" = "yes" ]; then
+    /bin/bash
+elif [ "$OPT_TARGET" != "" ]; then
+    bitbake "$OPT_TARGET"
+fi

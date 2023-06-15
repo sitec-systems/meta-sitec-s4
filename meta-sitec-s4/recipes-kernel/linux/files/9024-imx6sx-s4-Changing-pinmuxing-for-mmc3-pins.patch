@@ -1,0 +1,39 @@
+From dc81671ab94b9172d4405dcb4967c852d430928e Mon Sep 17 00:00:00 2001
+From: Robert Lehmann <robert.lehmann@sitec-systems.de>
+Date: Wed, 21 Aug 2019 15:14:56 +0200
+Subject: [PATCH] imx6sx-s4: Changing pinmuxing for mmc3 pins
+
+Increase the drive strength of the signals and decrease the frequency
+for the output.
+
+Ticket #3127
+---
+ arch/arm/boot/dts/imx6sx-s4.dts | 12 ++++++------
+ 1 file changed, 6 insertions(+), 6 deletions(-)
+
+diff --git a/arch/arm/boot/dts/imx6sx-s4.dts b/arch/arm/boot/dts/imx6sx-s4.dts
+index 21ca605..f1e1fe4 100644
+--- a/arch/arm/boot/dts/imx6sx-s4.dts
++++ b/arch/arm/boot/dts/imx6sx-s4.dts
+@@ -961,12 +961,12 @@
+ 
+ 		pinctrl_usdhc3: usdhc3grp {
+ 			fsl,pins = <
+-			MX6SX_PAD_SD3_CMD__USDHC3_CMD		0x17069
+-			MX6SX_PAD_SD3_CLK__USDHC3_CLK		0x10071
+-			MX6SX_PAD_SD3_DATA0__USDHC3_DATA0	0x17069
+-			MX6SX_PAD_SD3_DATA1__USDHC3_DATA1	0x17069
+-			MX6SX_PAD_SD3_DATA2__USDHC3_DATA2	0x17069
+-			MX6SX_PAD_SD3_DATA3__USDHC3_DATA3	0x17069
++			MX6SX_PAD_SD3_CMD__USDHC3_CMD		0x17009
++			MX6SX_PAD_SD3_CLK__USDHC3_CLK		0x10009
++			MX6SX_PAD_SD3_DATA0__USDHC3_DATA0	0x17009
++			MX6SX_PAD_SD3_DATA1__USDHC3_DATA1	0x17009
++			MX6SX_PAD_SD3_DATA2__USDHC3_DATA2	0x17009
++			MX6SX_PAD_SD3_DATA3__USDHC3_DATA3	0x17009
+ 			>;
+ 		};
+ 	};
+-- 
+2.7.4
+

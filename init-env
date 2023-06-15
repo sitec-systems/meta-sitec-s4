@@ -1,0 +1,73 @@
+#!/bin/bash
+
+cleanup() {
+    unset CURDIR
+    unset BUILDDIR
+    unset show_help
+    unset OPT_BUILDDIR
+    unset FULL_SETUP
+}
+
+if [ "$0" = "$BASH_SOURCE" ]; then
+    echo "You need to source this script!!!"
+    echo ""
+    echo "source ${BASH_SOURCE[0]}"
+    echo "for help try source ${BASH_SOURCE[0]} -h"
+fi
+
+show_help() {
+    echo "source ${BASH_SOURCE[0]} [OPTIONS]"
+    echo "options:"
+    echo " -b | --build=<DIRECTORY> Set the build directory (default: build)"
+    echo " -h | --help              Show help text"
+}
+
+CURDIR=$(pwd)
+OPT_BUILDDIR=""
+
+FULL_SETUP="no"
+
+while true
+do
+    case "$1" in
+    --help | -h)
+        show_help
+        cleanup
+        return 0
+        ;;
+    --build | -b)
+        OPT_BUILDDIR="$2"
+        if ! shift 2; then show_help; return 1; fi
+        ;;
+    *)
+        break
+        ;;
+    esac
+done
+
+if [ ! -e $OPT_BUILDDIR ]; then
+    FULL_SETUP="yes"
+fi
+
+cd poky && . ./oe-init-build-env $CURDIR/$OPT_BUILDDIR > /dev/null
+cd $CURDIR
+
+if [ "$FULL_SETUP" = "yes" ]; then
+    echo "Doing full setup"
+    if [ ! -d $OPT_BUILDDIR/conf ]; then
+        mkdir -p $OPT_BUILDDIR/conf
+    fi
+
+    if [ -f $OPT_BUILDDIR/conf/local.conf ]; then
+        rm $OPT_BUILDDIR/conf/local.conf
+    fi
+
+    if [ -f $OPT_BUILDDIR/conf/bblayers.conf ]; then
+        rm $OPT_BUILDDIR/conf/bblayers.conf
+    fi
+
+    ln -s ../../config/local.conf $OPT_BUILDDIR/conf/
+    ln -s ../../config/bblayers.conf $OPT_BUILDDIR/conf/
+fi
+
+cd $OPT_BUILDDIR

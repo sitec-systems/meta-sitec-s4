@@ -1,0 +1,94 @@
+From 38a966d3e0d3708b7472f8dee7cbb99b7db0cf90 Mon Sep 17 00:00:00 2001
+From: Robert Lehmann <robert.lehmann@sitec-systems.de>
+Date: Wed, 17 Aug 2016 10:44:05 +0200
+Subject: [PATCH 5/5] include: configs: score: Cleaning Up
+
+Doing some clean up works. Remove all the ifdefs for SPI-Nor and MMC
+boot. This configuration option is not needed anymore. The Processor
+boots proberly from the SD Card.
+
+Although change the settings for the SPI interface which is connected to
+the SPI-NOR storage. The CS is not the number and not directly the
+GPIO. Also remove the support for winbond SPI NOR flash chips.
+
+Ticket #1353
+---
+ include/configs/score.h | 25 +++----------------------
+ 1 file changed, 3 insertions(+), 22 deletions(-)
+
+diff --git a/include/configs/score.h b/include/configs/score.h
+index 24c999a..aaacffa 100644
+--- a/include/configs/score.h
++++ b/include/configs/score.h
+@@ -107,7 +107,7 @@
+ #define CONFIG_PFUZE100_PMIC_I2C
+ /*#undef CONFIG_LDO_BYPASS_CHECK*/
+ #ifdef CONFIG_PFUZE100_PMIC_I2C
+-#define CONFIG_PMIC_I2C_BUS		0
++#define CONFIG_PMIC_I2C_BUS		3
+ #define CONFIG_PMIC_I2C_SLAVE		0x8
+ #endif
+ 
+@@ -199,21 +199,12 @@
+         "run mmcfdt && " \
+         "bootm ${loadaddr} - ${fdt_addr}\0"
+ 
+-#if defined(CONFIG_SYS_BOOT_SPINOR)
+ #define CONFIG_EXTRA_ENV_SETTINGS \
+     CONFIG_MFG_ENV_SETTINGS \
+     CONFIG_BOOT_COMMON \
+     CONFIG_BOOT_KERNEL_ROOTFS_NAND \
+     CONFIG_BOOT_KERNEL_ROOTFS_MMC \
+     "bootcmd=run bootnand\0"
+-#else
+-#define CONFIG_EXTRA_ENV_SETTINGS \
+-    CONFIG_MFG_ENV_SETTINGS \
+-    CONFIG_BOOT_COMMON \
+-    CONFIG_BOOT_KERNEL_ROOTFS_MMC \
+-    CONFIG_BOOT_KERNEL_ROOTFS_NAND \
+-    "bootcmd=run bootmmc\0"
+-#endif
+ 
+ /* Miscellaneous configurable options */
+ #define CONFIG_SYS_LONGHELP
+@@ -256,22 +247,17 @@
+ 
+ #define CONFIG_ENV_SIZE			SZ_8K
+ 
+-#if defined CONFIG_SYS_BOOT_SPINOR
+ #define CONFIG_SYS_USE_SPINOR
+ #define CONFIG_ENV_IS_IN_NAND
+-#else
+-#define CONFIG_ENV_IS_IN_MMC
+-#endif
+ 
+ #define CONFIG_CMD_SF
+ #define CONFIG_SPI_FLASH
+-#define CONFIG_SPI_FLASH_WINBOND
+ #define CONFIG_SPI_FLASH_STMICRO
+ #define CONFIG_MXC_SPI
+ #define CONFIG_SF_DEFAULT_BUS   2
+ #define CONFIG_SF_DEFAULT_SPEED 20000000
+-#define CONFIG_SF_DEFAULT_MODE (SPI_MODE_0)
+-#define CONFIG_SF_DEFAULT_CS   (2|(IMX_GPIO_NR(6, 12)<<8))
++#define CONFIG_SF_DEFAULT_MODE SPI_MODE_0
++#define CONFIG_SF_DEFAULT_CS   2
+ 
+ /* NAND stuff */
+ #define CONFIG_CMD_NAND
+@@ -287,12 +273,7 @@
+ #define CONFIG_APBH_DMA_BURST
+ #define CONFIG_APBH_DMA_BURST8
+ 
+-#if defined(CONFIG_ENV_IS_IN_MMC)
+-#define CONFIG_ENV_OFFSET		(8 * SZ_64K)
+-#elif defined(CONFIG_ENV_IS_IN_NAND)
+ #define CONFIG_ENV_OFFSET	    0
+-#endif
+-
+ 
+ #define CONFIG_OF_LIBFDT
+ #define CONFIG_CMD_BOOTZ
+-- 
+2.7.4
+

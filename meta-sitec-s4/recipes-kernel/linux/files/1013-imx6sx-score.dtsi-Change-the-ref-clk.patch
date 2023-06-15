@@ -1,0 +1,29 @@
+From 92b0c8cc3525e2c49525f27a54e600c96ea1e9c4 Mon Sep 17 00:00:00 2001
+From: Robert Lehmann <robert.lehmann@sitec-systems.de>
+Date: Tue, 6 Sep 2016 11:06:21 +0200
+Subject: [PATCH 1013/1014] imx6sx-score.dtsi: Change the ref clk
+
+The reference clk for ENET2 is not 125M because RMII needs a 50 MHz
+reference clk for operation.
+
+Ticket #1379
+---
+ arch/arm/boot/dts/imx6sx-score.dtsi | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/arch/arm/boot/dts/imx6sx-score.dtsi b/arch/arm/boot/dts/imx6sx-score.dtsi
+index ae7f201..15686b6 100644
+--- a/arch/arm/boot/dts/imx6sx-score.dtsi
++++ b/arch/arm/boot/dts/imx6sx-score.dtsi
+@@ -1097,7 +1097,7 @@
+ 				clocks = <&clks IMX6SX_CLK_ENET>,
+ 				<&clks IMX6SX_CLK_ENET_AHB>,
+ 				<&clks IMX6SX_CLK_ENET_PTP>,
+-				<&clks IMX6SX_CLK_ENET2_REF_125M>,
++				<&clks IMX6SX_CLK_ENET2_REF>,
+ 				<&clks IMX6SX_CLK_ENET_PTP>;
+ 				clock-names = "ipg", "ahb", "ptp",
+ 				"enet_clk_ref", "enet_out";
+-- 
+2.7.4
+

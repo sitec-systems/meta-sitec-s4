@@ -1,0 +1,85 @@
+#!/bin/sh
+
+IGN_PIN="/sys/class/gpio/gpio65/value"
+PWR_PIN="/sys/class/gpio/gpio510/value"
+USB_VENDOR_ID="/sys/bus/usb/devices/usb1/1-1/1-1.2/idVendor"
+USB_PRODUCT_ID="/sys/bus/usb/devices/usb1/1-1/1-1.2/idProduct"
+MODEM_INTERFACE="/dev/ttyMODEMA1"
+
+CELL_TYPE_UNKNOWN=0
+CELL_TYPE_LARAR6=1
+CELL_TYPE_LARAR2=2
+
+cell_type=$CELL_TYPE_UNKNOWN
+
+start_module() {
+    echo "0" > $PWR_PIN
+    sleep 1
+    echo "1" > $PWR_PIN
+    sleep 1
+    echo "1" > $IGN_PIN
+    sleep 1
+    echo "0" > $IGN_PIN
+}
+
+determine_cell_type() {
+    for i in $(seq 1 60); do
+        if [ ! -e $USB_VENDOR_ID ];then
+            sleep 1
+            continue
+        fi
+
+        vendor_id=$(cat $USB_VENDOR_ID)
+        product_id=$(cat $USB_PRODUCT_ID)
+        if [ "$vendor_id" = "05c6" ]; then
+            cell_type=$CELL_TYPE_LARAR6
+            return
+        elif [ "$vendor_id" = "1546" ]; then
+            if [ "$product_id" = "110a" ]; then
+                cell_type=$CELL_TYPE_LARAR2
+                return
+            fi
+        fi
+        sleep 1
+    done
+}
+
+
+stop_module() {
+    if [ -e "$MODEM_INTERFACE" ]; then
+        printf "AT+CPWROFF\r\n" | microcom -t 1000 -X $MODEM_INTERFACE
+    fi
+}
+
+exec_start() {
+    echo "Start cellular module ..."
+
+    modprobe option
+    echo 05c6 908b > /sys/bus/usb-serial/drivers/option1/new_id
+
+    start_module
+    determine_cell_type
+
+    if [ $cell_type -eq $CELL_TYPE_UNKNOWN ]; then
+        echo "Can't detect cellular module"
+        exit 1
+    fi
+}
+
+exec_stop() {
+    echo "Stop cellular module ..."
+    stop_module
+}
+
+case "$1" in
+    start)
+        exec_start
+        ;;
+    stop)
+        exec_stop
+        ;;
+    *)
+        echo "$0 start|stop"
+        exit 0
+        ;;
+esac

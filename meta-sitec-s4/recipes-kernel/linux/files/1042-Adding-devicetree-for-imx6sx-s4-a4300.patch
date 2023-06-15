@@ -1,0 +1,176 @@
+From be50f217fa92f48e043233f079b3d9201d4d64cc Mon Sep 17 00:00:00 2001
+From: Robert Lehmann <robert.lehmann@sitec-systems.de>
+Date: Thu, 6 Feb 2020 14:33:23 +0000
+Subject: [PATCH] Adding devicetree for imx6sx-s4-a4300
+
+This devicetree extends the normal s4 device tree with the functions added by the A4003 expansion board.
+---
+ arch/arm/boot/dts/Makefile            |   4 +-
+ arch/arm/boot/dts/imx6sx-s4-a4003.dts | 140 ++++++++++++++++++++++++++++++++++
+ 2 files changed, 143 insertions(+), 1 deletion(-)
+ create mode 100644 arch/arm/boot/dts/imx6sx-s4-a4003.dts
+
+diff --git a/arch/arm/boot/dts/Makefile b/arch/arm/boot/dts/Makefile
+index d4f292a..e3f0e9a 100644
+--- a/arch/arm/boot/dts/Makefile
++++ b/arch/arm/boot/dts/Makefile
+@@ -355,7 +355,9 @@ dtb-$(CONFIG_SOC_IMX6SX) += \
+ 	imx6sx-19x19-arm2.dtb \
+ 	imx6sx-19x19-arm2-ldo.dtb \
+ 	imx6sx-19x19-arm2-csi.dtb \
+-	imx6sx-19x19-arm2-gpmi-weim.dtb
++	imx6sx-19x19-arm2-gpmi-weim.dtb \
++	imx6sx-s4.dts \
++	imx6sx-s4-a4003.dts
+ dtb-$(CONFIG_SOC_IMX6UL) += \
+ 	imx6ul-14x14-ddr3-arm2.dtb \
+ 	imx6ul-14x14-ddr3-arm2-emmc.dtb	\
+diff --git a/arch/arm/boot/dts/imx6sx-s4-a4003.dts b/arch/arm/boot/dts/imx6sx-s4-a4003.dts
+new file mode 100644
+index 0000000..e2c78ab
+--- /dev/null
++++ b/arch/arm/boot/dts/imx6sx-s4-a4003.dts
+@@ -0,0 +1,140 @@
++/*
++ * Copyright (c) 2020 sitec systems GmbH
++ *
++ * Author: Robert Lehmann <robert.lehmann@sitec-systems.de>
++ *
++ * This program is free software; you can redistribute it and/or modify
++ * it under the terms of the GNU General Public License version 2 as
++ * published by the Free Software Foundation.
++ */
++
++#include "imx6sx-s4.dts"
++
++/ {
++    model = "sitec systems S4 A4003 Exp";
++    compatible = "fsl,imx6sx-s4-a4003", "fsl,imx6sx";
++
++    exp-hub-reset {
++        compatible = "gpio-export";
++        en-name = "exp_vsys_en";
++        en-do-export;
++        en-output-high;
++        en-gpio-number="480";
++    };
++
++    exp-mod-reset {
++        compatible = "gpio-export";
++        en-name = "exp_pwr_on";
++        en-do-export;
++        en-output-low;
++        en-gpio-number="481";
++    };
++
++    exp-pwr-on {
++        compatible = "gpio-export";
++        en-name = "exp_pwr_rst";
++        en-do-export;
++        en-output-low;
++        en-gpio-number="482";
++    };
++
++    exp-pwr-ind {
++        compatible = "gpio-export";
++        en-name = "exp_ri";
++        en-input;
++        en-do-export;
++        en-gpio-number="483";
++    };
++
++    exp-ri {
++        compatible = "gpio-export";
++        en-name = "exp_pwr_ind";
++        en-input;
++        en-do-export;
++        en-gpio-number="484";
++    };
++
++    exp-pwr-en-mod {
++        compatible = "gpio-export";
++        en-name = "exp_pwr_en_mod";
++        en-do-export;
++        en-output-low;
++        en-gpio-number="485";
++    };
++
++    exp-pwr-en-v2x {
++        compatible = "gpio-export";
++        en-name = "exp_pwr_en_v2x";
++        en-do-export;
++        en-output-low;
++        en-gpio-number="486";
++    };
++
++    exp-rst-v2x {
++        compatible = "gpio-export";
++        en-name = "exp_rst_v2x";
++        en-do-export;
++        en-output-low;
++        en-gpio-number="487";
++    };
++    /* GPIO 488 --> not used
++     * GPIO 489 --> not used
++     */
++    exp-rst-gnss {
++        compatible = "gpio-export";
++        en-name = "exp_rst_gnss";
++        en-do-export;
++        en-output-low;
++        en-gpio-number="490";
++    };
++
++    exp-pwr-en-gnss {
++        compatible = "gpio-export";
++        en-name = "exp_pwr_en_gnss";
++        en-do-export;
++        en-output-low;
++        en-gpio-number="491";
++    };
++
++    exp-safebt {
++        compatible = "gpio-export";
++        en-name = "exp_safebt";
++        en-do-export;
++        en-output-low;
++        en-gpio-number="492";
++    };
++
++    exp-geofence {
++        compatible = "gpio-export";
++        en-name = "exp_geofence";
++        en-do-export;
++        en-input;
++        en-gpio-number="493";
++    };
++
++    exp-1pps {
++        compatible = "gpio-export";
++        en-name = "exp_1pps";
++        en-do-export;
++        en-output-low;
++        en-gpio-number="494";
++    };
++
++    exp-rst-hub {
++        compatible = "gpio-export";
++        en-name = "exp_rst_hub";
++        en-do-export;
++        en-output-low;
++        en-gpio-number="495";
++    };
++
++};
++
++&i2c2 {
++    a4003expand: pc9535@27 {
++        compatible = "nxp,pca9535";
++        gpio-controller;
++        #gpio-cells = <1>;
++        reg = <0x27>;
++    };
++};
+-- 
+2.1.4
+

@@ -1,0 +1,52 @@
+From cdee3b853652908a56f973a1767284c8d7c18e0e Mon Sep 17 00:00:00 2001
+From: Robert Lehmann <robert.lehmann@sitec-systems.de>
+Date: Wed, 2 Nov 2016 13:00:52 +0000
+Subject: [PATCH] imx6sx-s4: Add initialisation for I2C2
+
+The default speed is 100kBit/s. No drivers are set for this interface. But you can
+probe drivers on this interface at runtime.
+
+Ticket #1571
+---
+ arch/arm/boot/dts/imx6sx-s4.dts | 14 +++++++++++---
+ 1 file changed, 11 insertions(+), 3 deletions(-)
+
+diff --git a/arch/arm/boot/dts/imx6sx-s4.dts b/arch/arm/boot/dts/imx6sx-s4.dts
+index cc85e5e..4bd0769 100644
+--- a/arch/arm/boot/dts/imx6sx-s4.dts
++++ b/arch/arm/boot/dts/imx6sx-s4.dts
+@@ -121,6 +121,13 @@
+     status = "okay";
+ };
+ 
++&i2c2 {
++	clock-frequency = <100000>;
++	pinctrl-names = "default";
++	pinctrl-0 = <&pinctrl_i2c2>;
++	status = "okay";
++};
++
+ &i2c3 {
+ 	clock-frequency = <100000>;
+ 	pinctrl-names = "default";
+@@ -454,13 +461,14 @@
+ 			>;
+ 		};
+ 
+-		pinctrl_i2c1: i2c1grp {
++		pinctrl_i2c2: i2c2grp {
+             fsl,pins = <
+-            MX6SX_PAD_GPIO1_IO01__I2C1_SDA 0x4001b8b1
+-            MX6SX_PAD_GPIO1_IO00__I2C1_SCL 0x4001b8b1
++            MX6SX_PAD_SD4_DATA2__I2C2_SDA 0x4001b8b1
++            MX6SX_PAD_SD4_DATA3__I2C2_SCL 0x4001b8b1
+             >;
+         };
+ 
++
+ 		pinctrl_uart1: uart1grp {
+             fsl,pins = <
+             MX6SX_PAD_GPIO1_IO04__UART1_TX		0x1b0b1
+-- 
+2.1.4
+

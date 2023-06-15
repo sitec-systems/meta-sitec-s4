@@ -1,0 +1,560 @@
+From 1d1b59043075cc9c8563e18c70fcee58c1cd937c Mon Sep 17 00:00:00 2001
+From: Robert Lehmann <robert.lehmann@sitec-systems.de>
+Date: Thu, 13 Sep 2018 09:08:59 +0200
+Subject: [PATCH 9021/9022] dts: imx6sx-s4: Add pinmuxing for s4 to dts
+
+The device tree initialize the plattform driver gpio-export. This is
+done for the diffrent ios which have to be availible at boot time.
+
+Ticket #2539
+---
+ arch/arm/boot/dts/imx6sx-s4.dts | 503 +++++++++++++++++++++++++++++++++++-----
+ 1 file changed, 450 insertions(+), 53 deletions(-)
+
+diff --git a/arch/arm/boot/dts/imx6sx-s4.dts b/arch/arm/boot/dts/imx6sx-s4.dts
+index 35af1a8..4e05856 100644
+--- a/arch/arm/boot/dts/imx6sx-s4.dts
++++ b/arch/arm/boot/dts/imx6sx-s4.dts
+@@ -1,6 +1,6 @@
+ /*
+ * Copyright (C) 2014-2015 Freescale Semiconductor, Inc.
+-* Copyright (C) 2015, 2016 Robert Lehmann <robert.lehmann@sitec-systems.de>
++* Copyright (C) 2015, 2016, 2018 Robert Lehmann <robert.lehmann@sitec-systems.de>
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License version 2 as
+@@ -56,7 +56,322 @@
+ 			regulator-always-on;
+ 		};
+ 	};
+-	
++
++    /*
++     * Port Expander Port Mapping
++     *   IO0_0 : LAN_PWR_E
++     *   IO0_1 : IO3 - 5P_EXT_E
++     *   IO0_2 : IO1 - CAN2_E - no export
++     *   IO0_3 : IO4 - 5P_ISO_E
++     *   IO0_4 : IO0 - CAN1_TERM
++     *   IO0_5 : IO5 - 
++     *   IO0_6 : IO2 - CAN2_TERM
++     *   IO0_7 : DO1_OUT
++     *   
++     *   IO1_0 : DO1_STATE
++     *   IO1_1 : DO2_STATE
++     *   IO1_2 : DO2_OUT
++     *   IO1_3 : DO3_OUT
++     *   IO1_4 : DO3_STATE
++     *   IO1_5 : GNSS_PWR_E
++     *   IO1_6 : GSM_PWR_E
++     *   IO1_7 : WLAN_PWR_E
++     */
++    lan-pwr-e {
++        compatible = "gpio-export";
++        en-name = "lan_pwr_e";
++        en-output-high;
++        en-do-export;
++        en-gpio-number="496";
++    };
++
++    wifi-pwr-e {
++        compatible = "gpio-export";
++        en-name = "wifi_pwr_e";
++        en-output-high;
++        en-do-export;
++        en-gpio-number="511";
++    };
++
++    5p-ext-e {
++        compatible = "gpio-export";
++        en-name = "5p_ext_e";
++        en-output-high;
++        en-do-export;
++        en-gpio-number="497";
++    };
++
++    5p-iso-e {
++        compatible = "gpio-export";
++        en-name = "5p_iso_e";
++        en-output-high;
++        en-do-export;
++        en-gpio-number="499";
++    };
++
++    can1-term {
++        compatible = "gpio-export";
++        en-name = "can1_term";
++        en-output-low;
++        en-do-export;
++        en-gpio-number="500";
++    };
++
++    can2-term {
++        compatible = "gpio-export";
++        en-name = "can2_term";
++        en-output-low;
++        en-do-export;
++        en-gpio-number="502";
++    };
++
++    can2-e {
++        compatible = "gpio-export";
++        en-name = "can2_en";
++        en-output-high;
++        en-gpio-number="498";
++    };
++
++    do1-out {
++        compatible = "gpio-export";
++        en-name = "do1_out";
++        en-output-low;
++        en-do-export;
++        en-gpio-number="503";
++    };
++
++    do1-state {
++        compatible = "gpio-export";
++        en-name = "do1_state";
++        en-gpio-number = "504";
++        en-do-export;
++    };
++
++    do2-out {
++        compatible = "gpio-export";
++        en-name = "do2_out";
++        en-output-low;
++        en-do-export;
++        en-gpio-number="506";
++    };
++
++    do2-state {
++        compatible = "gpio-export";
++        en-name = "do2_state";
++        en-gpio-number = "505";
++        en-do-export;
++    };
++
++    do3-out {
++        compatible = "gpio-export";
++        en-name = "do3_out";
++        en-output-low;
++        en-do-export;
++        en-gpio-number="507";
++    };
++
++    do3-state {
++        compatible = "gpio-export";
++        en-name = "do3_state";
++        en-gpio-number = "508";
++        en-do-export;
++    };
++
++    gnss-pwr-e {
++        compatible = "gpio-export";
++        en-name = "gnss_pwr_e";
++        en-output-low;
++        en-do-export;
++        en-gpio-number="509";
++    };
++
++    gsm-pwr-e {
++        compatible = "gpio-export";
++        en-name = "gsm_pwr_e";
++        en-output-low;
++        en-do-export;
++        en-gpio-number="510";
++    };
++
++    lin-e {
++        compatible = "gpio-export";
++        pinctrl-names = "default";
++        pinctrl-0 = <&pinctrl_lin_e>;
++        en-gpio = <&gpio2 10 0>;
++        en-name = "lin_e";
++        en-output-high;
++        en-do-export;
++    };
++
++    temp-irq {
++        compatible = "gpio-export";
++        pinctrl-names = "default";
++        pinctrl-0 = <&pinctrl_temp_irq>;
++        en-gpio = <&gpio1 8 0>;
++        en-name = "temp_irq";
++        en-do-export;
++    };
++
++    acc-irq {
++        compatible = "gpio-export";
++        pinctrl-names = "default";
++        pinctrl-0 = <&pinctrl_acc_irq>;
++        en-gpio = <&gpio1 9 0>;
++        en-name = "acc_irq";
++        en-do-export;
++    };
++
++    i2c-irq {
++        compatible = "gpio-export";
++        pinctrl-names = "default";
++        pinctrl-0 = <&pinctrl_i2c_irq>;
++        en-gpio = <&gpio1 1 0>;
++        en-name = "i2c_irq";
++        en-do-export;
++    };
++
++    gsm-ri {
++        compatible = "gpio-export";
++        pinctrl-names = "default";
++        pinctrl-0 = <&pinctrl_gsm_ri>;
++        en-gpio = <&gpio2 15 0>;
++        en-name = "gsm_ri";
++        en-do-export;
++    };
++
++    di1 {
++        compatible = "gpio-export";
++        pinctrl-names = "default";
++        pinctrl-0 = <&pinctrl_di1>;
++        en-gpio = <&gpio3 24 0>;
++        en-name = "di1";
++        en-do-export;
++    };
++
++    di2 {
++        compatible = "gpio-export";
++        pinctrl-names = "default";
++        pinctrl-0 = <&pinctrl_di2>;
++        en-gpio = <&gpio3 21 0>;
++        en-name = "di2";
++        en-do-export;
++    };
++
++    di3 {
++        compatible = "gpio-export";
++        pinctrl-names = "default";
++        pinctrl-0 = <&pinctrl_di3>;
++        en-gpio = <&gpio3 16 0>;
++        en-name = "di3";
++        en-do-export;
++    };
++
++    do-irq {
++        compatible = "gpio-export";
++        pinctrl-names = "default";
++        pinctrl-0 = <&pinctrl_do_irq>;
++        en-gpio = <&gpio3 27 0>;
++        en-name = "do_irq";
++        en-do-export;
++    };
++
++    di-k15 {
++        compatible = "gpio-export";
++        pinctrl-names = "default";
++        pinctrl-0 = <&pinctrl_di_k15>;
++        en-gpio = <&gpio3 26 0>;
++        en-name = "di_k15";
++        en-do-export;
++    };
++
++    gsm-e-reset {
++        compatible = "gpio-export";
++        pinctrl-names = "default";
++        pinctrl-0 = <&pinctrl_gsm_e_reset>;
++        en-gpio = <&gpio3 9 0>;
++        en-name = "gsm_e_rst";
++        en-do-export;
++        en-output-low;
++    };
++
++    gsm-ign {
++        compatible = "gpio-export";
++        pinctrl-names = "default";
++        pinctrl-0 = <&pinctrl_gsm_ign>;
++        en-gpio = <&gpio3 1 0>;
++        en-name = "gsm_ign";
++        en-do-export;
++        en-output-low;
++    };
++
++    host2bt {
++        compatible = "gpio-export";
++        pinctrl-names = "default";
++        pinctrl-0 = <&pinctrl_host2bt>;
++        en-gpio = <&gpio3 11 0>;
++        en-name = "host2bt";
++        en-do-export;
++    };
++
++    host2wl {
++        compatible = "gpio-export";
++        pinctrl-names = "default";
++        pinctrl-0 = <&pinctrl_host2wl>;
++        en-gpio = <&gpio3 10 0>;
++        en-name = "host2wl";
++        en-do-export;
++    };
++
++    sim_sel {
++        compatible = "gpio-export";
++        pinctrl-names = "default";
++        pinctrl-0 = <&pinctrl_sim_sel>;
++        en-gpio = <&gpio1 11 0>;
++        en-name = "sim_sel";
++        en-do-export;
++        en-output-low;
++    };
++
++    k-l-pu-e {
++        compatible = "gpio-export";
++        pinctrl-names = "default";
++        pinctrl-0 = <&pinctrl_k_l_pu_e>;
++        en-gpio = <&gpio4 30 0>;
++        en-name = "k_l_pu_e";
++        en-do-export;
++        en-output-low;
++    };
++
++    k-l-pu-half {
++        compatible = "gpio-export";
++        pinctrl-names = "default";
++        pinctrl-0 = <&pinctrl_k_l_half>;
++        en-gpio = <&gpio4 24 0>;
++        en-name = "k_l_pu_half";
++        en-do-export;
++        en-output-low;
++    };
++
++    buzzer {
++        compatible = "gpio-export";
++        pinctrl-names = "default";
++        pinctrl-0 = <&pinctrl_buzzer>;
++        en-gpio = <&gpio1 12 0>;
++        en-name = "buzzer";
++        en-do-export;
++        en-output-low;
++    };
++
++    otg-drvbus {
++        compatible = "gpio-export";
++        pinctrl-names = "default";
++        pinctrl-0 = <&pinctrl_otg_drvbus>;
++        en-gpio = <&gpio1 13 0>;
++        en-name = "otg_drvbus";
++        en-do-export;
++        en-output-low;
++    };
++
+ };
+ 
+ &cpu0 {
+@@ -288,7 +603,7 @@
+ 				regulator-always-on;
+ 			};
+ 
+-			Vgen1_reg: vgen1 {
++			vgen1_reg: vgen1 {
+ 				regulator-min-microvolt = <800000>;
+ 				regulator-max-microvolt = <1550000>;
+ 				regulator-always-on;
+@@ -360,32 +675,6 @@
+ 	};
+ };
+ 
+-/*&ecspi5 {*/
+-	/*pinctrl-names = "default";*/
+-	/*pinctrl-0 = <&pinctrl_ecspi5>;*/
+-	/*fsl,spi-num-chipselects = <4>;*/
+-	/*cs-gpios = <&gpio4 28 0>,*/
+-	/*<&gpio4 18 0>,*/
+-	/*<&gpio4 19 0>,*/
+-	/*<&gpio4 27 0>;*/
+-	/*status = "okay";*/
+-
+-	/*adc@0 {*/
+-		/*compatible = "ti,ads8688";*/
+-		/*reg = <0>;*/
+-		/*spi-max-frequency = <1000000>;*/
+-	/*};*/
+-
+-	/*gpio@1 {*/
+-		/*compatible = "microchip,mcp23s08";*/
+-		/*reg = <1>;*/
+-		/*gpio-controller;*/
+-        /*#gpio-cells = <2>;*/
+-        /*spi-present-mask = <0x01>;*/
+-        /*spi-max-frequency = <1000000>;*/
+-	/*};*/
+-/*};*/
+-
+ &gpmi {
+ 	pinctrl-names = "default";
+ 	pinctrl-0 = <&pinctrl_gpmi_nand_1>;
+@@ -423,33 +712,141 @@
+ 			MX6SX_PAD_SD4_CMD__GPIO6_IO_13		0x80000000	// SPI3 SS1
+ 			MX6SX_PAD_SD4_CLK__GPIO6_IO_12		0x80000000	// SPI3 SS2
+ 			MX6SX_PAD_SD4_DATA0__GPIO6_IO_14	0x80000000	// SPI3 SS3
+-			MX6SX_PAD_GPIO1_IO08__GPIO1_IO_8    0xc9		// TEMP_IRQ
+-			MX6SX_PAD_GPIO1_IO09__GPIO1_IO_9    0xc9		// ACC_IRQ
+-			MX6SX_PAD_GPIO1_IO02__GPIO1_IO_2    0xc9		// FC_IRQ
+-			MX6SX_PAD_GPIO1_IO00__GPIO1_IO_0    0xc9		// PWR_ALERT
+-			MX6SX_PAD_GPIO1_IO01__GPIO1_IO_1    0xc9		// I2C_IRQ
+-			MX6SX_PAD_GPIO1_IO03__GPIO1_IO_3    0xb041		// CAN2_WAKE
+-			MX6SX_PAD_KEY_ROW0__GPIO2_IO_15     0xc9		// GSM_RI
+-			MX6SX_PAD_KEY_COL0__GPIO2_IO_10     0xc9		// LIN_E
+-			MX6SX_PAD_KEY_COL2__GPIO2_IO_12     0xc9		// DI_K30
+-			MX6SX_PAD_LCD1_DATA23__GPIO3_IO_24  0xc9		// DI1
+-			MX6SX_PAD_LCD1_CLK__GPIO3_IO_0		0xc9		// DI2
+-			MX6SX_PAD_LCD1_DATA15__GPIO3_IO_16  0xc9		// DI3
+-			MX6SX_PAD_LCD1_RESET__GPIO3_IO_27   0xc9		// DO_IRQ
+-			MX6SX_PAD_LCD1_HSYNC__GPIO3_IO_26   0xc9		// DI_K15
+-			MX6SX_PAD_LCD1_DATA17__GPIO3_IO_18  0xc9		// kill_4P
+-			MX6SX_PAD_LCD1_DATA08__GPIO3_IO_9   0xc9		// GSM_E_RST
+-			MX6SX_PAD_LCD1_DATA00__GPIO3_IO_1   0xc9		// GSM_IGN
+-			MX6SX_PAD_LCD1_DATA10__GPIO3_IO_11	0xc9		// HOST2BT
+-			MX6SX_PAD_LCD1_DATA09__GPIO3_IO_10	0xc9		// HOST2WL
+-			MX6SX_PAD_GPIO1_IO13__GPIO1_IO_13   0xc9		// OTG_DRVBUS
+-			MX6SX_PAD_GPIO1_IO11__GPIO1_IO_11   0xc9		// SIM_SEL
+-			MX6SX_PAD_QSPI1B_SS0_B__GPIO4_IO_30	0xc9		// K_L_PU_E
+-			MX6SX_PAD_QSPI1B_DATA0__GPIO4_IO_24	0xc9		// K_L_1/2
+-			MX6SX_PAD_GPIO1_IO12__GPIO1_IO_12	0x110b0		// Buzzer
+ 			>;
+ 		};
+ 
++        pinctrl_buzzer: buzzer {
++            fsl,pins = <
++                MX6SX_PAD_GPIO1_IO12__GPIO1_IO_12	0x110b0		// Buzzer
++            >;
++        };
++
++        pinctrl_k_l_half: k_l_half {
++            fsl,pins = <
++                MX6SX_PAD_QSPI1B_DATA0__GPIO4_IO_24	0xc9		// K_L_1/2
++            >;
++        };
++
++        pinctrl_k_l_pu_e: k_l_pu_e {
++            fsl,pins = <
++                MX6SX_PAD_QSPI1B_SS0_B__GPIO4_IO_30	0xc9		// K_L_PU_E
++            >;
++        };
++
++        pinctrl_sim_sel: sim_sel {
++            fsl,pins = <
++                MX6SX_PAD_GPIO1_IO11__GPIO1_IO_11   0xc9		// SIM_SEL
++            >;
++        };
++
++        pinctrl_otg_drvbus: otg_drvbus {
++            fsl,pins = <
++                MX6SX_PAD_GPIO1_IO13__GPIO1_IO_13   0xc9		// OTG_DRVBUS
++            >;
++        };
++
++        pinctrl_host2wl: host2wl {
++            fsl,pins = <
++                MX6SX_PAD_LCD1_DATA09__GPIO3_IO_10	0xc9		// HOST2WL
++            >;
++        };
++
++        pinctrl_host2bt: host2bt {
++            fsl,pins = <
++                MX6SX_PAD_LCD1_DATA10__GPIO3_IO_11	0xc9		// HOST2BT
++            >;
++        };
++
++        pinctrl_gsm_ign: gsm_ign {
++            fsl,pins = <
++                MX6SX_PAD_LCD1_DATA00__GPIO3_IO_1   0xc9		// GSM_IGN
++            >;
++        };
++
++        pinctrl_gsm_e_reset: gsm_e_reset {
++            fsl,pins = <
++                MX6SX_PAD_LCD1_DATA08__GPIO3_IO_9   0xc9		// GSM_E_RST
++            >;
++        };
++
++        pinctrl_kill_4p: kill_4p {
++            fsl,pins = <
++                MX6SX_PAD_LCD1_DATA17__GPIO3_IO_18  0xc9		// kill_4P
++            >;
++        };
++
++        pinctrl_di_k15: di_k15 {
++            fsl,pins = <
++                MX6SX_PAD_LCD1_HSYNC__GPIO3_IO_26   0xc9		// DI_K15
++            >;
++        };
++
++        pinctrl_do_irq: do_irq {
++            fsl,pins = <
++                MX6SX_PAD_LCD1_RESET__GPIO3_IO_27   0xc9		// DO_IRQ
++            >;
++        };
++
++        pinctrl_di3: di3 {
++            fsl,pins = <
++                MX6SX_PAD_LCD1_DATA15__GPIO3_IO_16  0xc9		// DI3
++            >;
++        };
++
++        pinctrl_di2: di2 {
++            fsl,pins = <
++                MX6SX_PAD_LCD1_CLK__GPIO3_IO_0		0xc9		// DI2
++            >;
++        };
++
++        pinctrl_di1: di1 {
++            fsl,pins = <
++                MX6SX_PAD_LCD1_DATA23__GPIO3_IO_24  0xc9		// DI1
++            >;
++        };
++
++        pinctrl_di_k30: di_k30 {
++            fsl,pins = <
++                MX6SX_PAD_KEY_COL2__GPIO2_IO_12     0xc9		// DI_K30
++            >;
++        };
++
++        pinctrl_temp_irq: temp_irq {
++            fsl,pins = <
++                MX6SX_PAD_GPIO1_IO08__GPIO1_IO_8    0xc9 // TEMP_IRQ
++            >;
++        };
++
++        pinctrl_acc_irq: acc_irq {
++            fsl,pins = <
++                MX6SX_PAD_GPIO1_IO09__GPIO1_IO_9    0xc9 // ACC_IRQ
++            >;
++        };
++
++        pinctrl_pwr_alert: pwr_alert {
++            fsl,pins = <
++                MX6SX_PAD_GPIO1_IO00__GPIO1_IO_0    0xc9 // PWR_ALERT
++            >;
++        };
++
++        pinctrl_i2c_irq: i2c_irq {
++            fsl,pins = <
++                MX6SX_PAD_GPIO1_IO01__GPIO1_IO_1    0xc9 // I2C_IRQ
++            >;
++        };
++
++        pinctrl_gsm_ri: gsm_ri {
++            fsl,pins = <
++                MX6SX_PAD_KEY_ROW0__GPIO2_IO_15     0xc9 // GSM_RI
++            >;
++        };
++
++        pinctrl_lin_e: lin_e {
++            fsl,pins = <
++                MX6SX_PAD_KEY_COL0__GPIO2_IO_10     0xc9 // LIN_E
++            >;
++        };
++
+ 		pinctrl_gpmi_nand_1: gpmi-nand-1 {
+ 			fsl,pins = <
+ 			MX6SX_PAD_NAND_CLE__RAWNAND_CLE         0xb0b1
+-- 
+2.7.4
+

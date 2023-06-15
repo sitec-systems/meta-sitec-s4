@@ -1,0 +1,30 @@
+From 69bc370d57fd3dbb24adad456f0e6acdd7bf34ca Mon Sep 17 00:00:00 2001
+From: Robert Lehmann <robert.lehmann@sitec-systems.de>
+Date: Mon, 19 Sep 2016 11:57:20 +0000
+Subject: [PATCH 8/8] configs: score: Add update_nor from sd2
+
+Now it's possible to update the u-boot nor flash neither from sd2 or sd3.
+For that you have two scripts each for one interface.
+
+Ticket #1368
+---
+ include/configs/score.h | 3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
+
+diff --git a/include/configs/score.h b/include/configs/score.h
+index aaacffa..cd8d3e0 100644
+--- a/include/configs/score.h
++++ b/include/configs/score.h
+@@ -171,7 +171,8 @@
+     "fdt_file=imx6sx-score.dtb\0" \
+     "add_args=\0" \
+     "mtdparts=gpmi-nand:512k(ubootenv),8m(kernel),2m(dtb),8m(kernel_backup),2m(dtb_backup),-(rootfs)\0" \
+-    "update_nor=fatload mmc 1:1 ${loadaddr} u-boot.imx && sf probe && sf erase 0x0 0x60000 && sf write ${loadaddr} 0x400 0x60000\0"
++    "update_nor_sd2=fatload mmc 0:1 ${loadaddr} u-boot.imx && sf probe && sf erase 0x0 0x60000 && sf write ${loadaddr} 0x400 0x60000\0" \
++    "update_nor_sd3=fatload mmc 1:1 ${loadaddr} u-boot.imx && sf probe && sf erase 0x0 0x60000 && sf write ${loadaddr} 0x400 0x60000\0"
+ 
+ #define CONFIG_BOOT_KERNEL_ROOTFS_NAND \
+     "getrootname=if test $root_alt -eq 0; then setenv rootname rootfs; else; setenv rootname rootfs_alt; fi;\0" \
+-- 
+2.1.4
+

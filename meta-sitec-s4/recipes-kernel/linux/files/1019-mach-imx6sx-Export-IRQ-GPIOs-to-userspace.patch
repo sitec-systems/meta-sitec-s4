@@ -1,0 +1,68 @@
+From fcec324058b8d4bacc43f1a732d5f7e160e4b5b7 Mon Sep 17 00:00:00 2001
+From: Robert Lehmann <robert.lehmann@sitec-systems.de>
+Date: Tue, 1 Nov 2016 13:53:43 +0000
+Subject: [PATCH] mach-imx6sx: Export IRQ GPIOs to userspace
+
+All IRQ GPIOs are exported to the userspace. They are configured as
+inputs.
+
+Ticket #1567
+---
+ arch/arm/mach-imx/gpio_label.h  |  7 +++++++
+ arch/arm/mach-imx/mach-imx6sx.c | 15 +++++++++++++++
+ 2 files changed, 22 insertions(+)
+
+diff --git a/arch/arm/mach-imx/gpio_label.h b/arch/arm/mach-imx/gpio_label.h
+index cb552f0..c261489e 100644
+--- a/arch/arm/mach-imx/gpio_label.h
++++ b/arch/arm/mach-imx/gpio_label.h
+@@ -18,6 +18,13 @@
+ #define K_L_PU_HALF	"k_l_pu_half"
+ #define LAN_PWR_E   "lan_pwr_e"
+ #define KILL_4P     "kill_4P"
++#define GSM_RI		"gsm_ringindicator"
++#define PWR_ALERT	"pwr_alert"
++#define FC_IRQ		"fc_irq"
++#define I2C_IRQ		"i2c_irq"
++#define ACC_IRQ		"acc_irq"
++#define CHRG_IRQ	"charge_irq"
++#define TEMP_IRQ	"temp_irq"
+ 
+ #define DI2			"di2"
+ #define DI3			"di3"
+diff --git a/arch/arm/mach-imx/mach-imx6sx.c b/arch/arm/mach-imx/mach-imx6sx.c
+index b5dc376..beaeb13 100644
+--- a/arch/arm/mach-imx/mach-imx6sx.c
++++ b/arch/arm/mach-imx/mach-imx6sx.c
+@@ -155,6 +155,13 @@ static void imx6sx_gpio_setup_score(void)
+ #define S4_CAN1_STBY 504
+ #define S4_5P_E 510
+ #define S4_5P_GOOD 511
++#define S4_GSM_RI IMX_GPIO_NR(3, 26)
++#define S4_PWR_ALERT IMX_GPIO_NR(3, 28)
++#define S4_FC_IRQ IMX_GPIO_NR(3, 27)
++#define S4_I2C_IRQ IMX_GPIO_NR(3, 9)
++#define S4_ACC_IRQ IMX_GPIO_NR(3, 16)
++#define S4_CHRG_IRQ IMX_GPIO_NR(3, 17)
++#define S4_TEMP_IRQ IMX_GPIO_NR(3, 23)
+ static void imx6sx_gpio_setup_s4_native(void)
+ {
+ 	pr_info("S4: Doing GPIO native init\n");
+@@ -169,6 +176,14 @@ static void imx6sx_gpio_setup_s4_native(void)
+ 	gpio_request_export(S4_K_L_HALF, GPIOF_OUT_INIT_LOW, K_L_PU_HALF);
+ 	gpio_request_export(S4_LAN_PWR_E, GPIOF_OUT_INIT_HIGH, LAN_PWR_E);
+ 	gpio_request_export(S4_KILL_4P, GPIOF_OUT_INIT_LOW, KILL_4P);
++	gpio_request_export(S4_GSM_RI, GPIOF_IN, GSM_RI);
++	gpio_request_export(S4_PWR_ALERT, GPIOF_IN, PWR_ALERT);
++	gpio_request_export(S4_FC_IRQ, GPIOF_IN, FC_IRQ);
++	gpio_request_export(S4_I2C_IRQ, GPIOF_IN, I2C_IRQ);
++	gpio_request_export(S4_ACC_IRQ, GPIOF_IN, ACC_IRQ);
++	gpio_request_export(S4_CHRG_IRQ, GPIOF_IN, CHRG_IRQ);
++	gpio_request_export(S4_TEMP_IRQ, GPIOF_IN, TEMP_IRQ);
++	
+ 	pr_info("S4: Finished GPIO native init\n");
+ }
+ 
+-- 
+2.1.4
+

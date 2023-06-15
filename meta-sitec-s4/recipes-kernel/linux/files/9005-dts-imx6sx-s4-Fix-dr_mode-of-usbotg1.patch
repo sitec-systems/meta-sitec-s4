@@ -1,0 +1,44 @@
+From e4148f5f56e5196a0ed71bab592c3bd0afe9c496 Mon Sep 17 00:00:00 2001
+From: Robert Lehmann <robert.lehmann@sitec-systems.de>
+Date: Thu, 25 Aug 2016 08:13:53 +0200
+Subject: [PATCH 9005/9006] dts: imx6sx-s4: Fix dr_mode of usbotg1
+
+Ticket #1247
+---
+ arch/arm/boot/dts/imx6sx-s4.dts | 6 +++---
+ 1 file changed, 3 insertions(+), 3 deletions(-)
+
+diff --git a/arch/arm/boot/dts/imx6sx-s4.dts b/arch/arm/boot/dts/imx6sx-s4.dts
+index accfa3f..e8da8f4 100644
+--- a/arch/arm/boot/dts/imx6sx-s4.dts
++++ b/arch/arm/boot/dts/imx6sx-s4.dts
+@@ -90,7 +90,7 @@
+ };
+ 
+ &usbotg1 {
+-	dr_mode = "periperal";
++	dr_mode = "peripheral";
+ 	status = "okay";
+ };
+ 
+@@ -187,7 +187,7 @@
+ 		compatible = "nxp,pca9534";
+ 		gpio-controller;
+ 		#gpio-cells = <1>;
+-		gpio-base = <300>;
++		gpio-base = <500>;
+ 		reg = <0x23>;
+ 
+ 		can1_stby {
+@@ -244,7 +244,7 @@
+ 		compatible = "nxp,pca9534";
+ 		gpio-controller;
+ 		#gpio-cells = <1>;
+-        gpio-base = <308>;
++        gpio-base = <508>;
+ 		reg = <0x22>;
+ 
+ 		do1_out {
+-- 
+2.7.4
+

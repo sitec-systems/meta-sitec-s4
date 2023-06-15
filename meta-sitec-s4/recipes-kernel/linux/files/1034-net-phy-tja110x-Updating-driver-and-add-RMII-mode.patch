@@ -1,0 +1,192 @@
+From 565c1329d5b88d600c55ad3dd8503751190cc7f6 Mon Sep 17 00:00:00 2001
+From: Robert Lehmann <robert.lehmann@sitec-systems.de>
+Date: Fri, 25 Jan 2019 13:05:39 +0100
+Subject: [PATCH] net:phy:tja110x: Updating driver and add RMII mode
+
+* Updating the driver to version 0.5.0
+* Adding RMII mode with a 25 MHz xtal frequency
+
+ticket #2755
+---
+ drivers/net/phy/tja110x.c | 58 ++++++++++++++++++++++++++++++++++++++++-------
+ drivers/net/phy/tja110x.h |  4 ++--
+ 2 files changed, 52 insertions(+), 10 deletions(-)
+
+diff --git a/drivers/net/phy/tja110x.c b/drivers/net/phy/tja110x.c
+index 0937519..c663278 100644
+--- a/drivers/net/phy/tja110x.c
++++ b/drivers/net/phy/tja110x.c
+@@ -88,12 +88,7 @@ static struct attribute_group nxp_attribute_group;
+ static int get_and_request_gpio(struct phy_device *phydev)
+ {
+ 	int gpio_num;
+-	struct device_node *node;
+-
+-	node = phydev->PHYDEV_DEV.of_node;
+-	if (!node)
+-		goto error;
+-
++	struct device_node *node; node = phydev->PHYDEV_DEV.of_node; if (!node) goto error; 
+ 	gpio_num = of_get_named_gpio(node, "irq-gpio", 0);
+ 	if (!gpio_is_valid(gpio_num))
+ 		goto error;
+@@ -125,6 +120,10 @@ static int nxp_config_init(struct phy_device *phydev)
+ 		dev_alert(&phydev->PHYDEV_DEV, "initializing phy %x\n", phydev->PHYDEV_ADDR);
+ 
+ 	/* set features of the PHY */
++	phydev->supported   = 0;
++	phydev->advertising = 0;
++	phydev->autoneg     = AUTONEG_DISABLE;
++
+ 	reg_val = phy_read(phydev, MII_BMSR);
+ 	if (reg_val < 0)
+ 		goto phy_read_error;
+@@ -137,7 +136,6 @@ static int nxp_config_init(struct phy_device *phydev)
+ 		if (reg_val & ESTATUS_100T1_FULL) {
+ 			/* update phydev to include the supported features */
+ 			phydev->supported |= SUPPORTED_100BASET1_FULL;
+-			phydev->advertising |= ADVERTISED_100BASET1_FULL;
+ 		}
+ 	}
+ 
+@@ -154,7 +152,7 @@ static int nxp_config_init(struct phy_device *phydev)
+ 	switch (phydev->phy_id & NXP_PHY_ID_MASK) {
+ 	case NXP_PHY_ID_TJA1100:
+ 		reg_name = MII_CFG1;
+-		reg_value = TJA1100_CFG1_LED_EN | CFG1_LED_LINKUP;
++		reg_value = TJA1100_CFG1_LED_EN | CFG1_LED_LINKUP | CFG1_RMII_25MHZ_MODE;
+ 		if (!managed_mode)
+ 			reg_value |= TJA1100_CFG1_AUTO_OP;
+ 		reg_mask = TJA1100_CFG1_AUTO_OP |
+@@ -1318,6 +1316,19 @@ phy_configure_error:
+ 	return err;
+ }
+ 
++/* enable or disable loopback mode */
++static int __maybe_unused nxp_set_loopback(struct phy_device *phydev, bool enable)
++{
++	int ret;
++
++	if (enable)
++		ret = enter_loopback_mode(phydev, INTERNAL_LMODE);
++	else
++		ret = enter_loopback_mode(phydev, NO_LMODE);
++
++	return ret;
++}
++
+ /* helper function, enters the led mode specified by lmode
+  * @return          0 if led mode was entered, <0 on read or write error
+  */
+@@ -2277,6 +2288,20 @@ phy_configure_error:
+ 	return err;
+ }
+ 
++/* Function reads the value of the CFG1 register at runtime and returns it
++ */
++static ssize_t sysfs_get_cfg1_val(struct device *dev,
++				 struct device_attribute *attr, char *buf)
++{
++    u16 val;
++    struct phy_device *phydev = container_of(dev, struct phy_device, PHYDEV_DEV);
++
++    val = phy_read(phydev, MII_CFG1);
++    /*dev_info(&phydev->PHYDEV_DEV, "Value 0x%04x\n", val);*/
++
++    return sprintf(buf, "VAL: 0x%04x\n", val);
++}
++
+ /* r/w access for everyone */
+ static DEVICE_ATTR(master_cfg, S_IWUSR | S_IRUSR,
+ 		   sysfs_get_master_cfg, sysfs_set_master_cfg);
+@@ -2290,6 +2315,7 @@ static DEVICE_ATTR(test_mode, S_IWUSR | S_IRUSR,
+ static DEVICE_ATTR(led_cfg, S_IWUSR | S_IRUSR,
+ 		   sysfs_get_led_cfg, sysfs_set_led_cfg);
+ static DEVICE_ATTR(link_status, S_IRUSR, sysfs_get_link_status, NULL);
++static DEVICE_ATTR(cfg1_val, S_IRUSR, sysfs_get_cfg1_val, NULL);
+ static DEVICE_ATTR(wakeup_cfg, S_IWUSR | S_IRUSR,
+ 		   sysfs_get_wakeup_cfg, sysfs_set_wakeup_cfg);
+ static DEVICE_ATTR(snr_wlimit_cfg, S_IWUSR | S_IRUSR,
+@@ -2302,6 +2328,7 @@ static struct attribute *nxp_sysfs_entries[] = {
+ 	&dev_attr_cable_test.attr,
+ 	&dev_attr_test_mode.attr,
+ 	&dev_attr_led_cfg.attr,
++	&dev_attr_cfg1_val.attr,
+ 	&dev_attr_link_status.attr,
+ 	&dev_attr_wakeup_cfg.attr,
+ 	&dev_attr_snr_wlimit_cfg.attr,
+@@ -2587,6 +2614,9 @@ static struct phy_driver nxp_drivers[] = {
+ #if LINUX_VERSION_CODE <= KERNEL_VERSION(4,5,0)
+ 	.driver = {.owner = THIS_MODULE},
+ #endif
++#if LINUX_VERSION_CODE >= KERNEL_VERSION(4,13,1)
++	.set_loopback = nxp_set_loopback,
++#endif
+ 	},
+ 	{
+ 	.phy_id = NXP_PHY_ID_TJA1102P0,
+@@ -2607,6 +2637,9 @@ static struct phy_driver nxp_drivers[] = {
+ #if LINUX_VERSION_CODE <= KERNEL_VERSION(4,5,0)
+ 	.driver = {.owner = THIS_MODULE},
+ #endif
++#if LINUX_VERSION_CODE >= KERNEL_VERSION(4,13,1)
++	.set_loopback = nxp_set_loopback,
++#endif
+ 	},
+ 	{
+ 	.phy_id = NXP_PHY_ID_TJA1101,
+@@ -2627,6 +2660,9 @@ static struct phy_driver nxp_drivers[] = {
+ #if LINUX_VERSION_CODE <= KERNEL_VERSION(4,5,0)
+ 	.driver = {.owner = THIS_MODULE},
+ #endif
++#if LINUX_VERSION_CODE >= KERNEL_VERSION(4,13,1)
++	.set_loopback = nxp_set_loopback,
++#endif
+ 	},
+ 	{
+ 	.phy_id = NXP_PHY_ID_TJA1102S,
+@@ -2647,6 +2683,9 @@ static struct phy_driver nxp_drivers[] = {
+ #if LINUX_VERSION_CODE <= KERNEL_VERSION(4,5,0)
+ 	.driver = {.owner = THIS_MODULE},
+ #endif
++#if LINUX_VERSION_CODE >= KERNEL_VERSION(4,13,1)
++	.set_loopback = nxp_set_loopback,
++#endif
+ 	}
+ #ifdef CONFIG_TJA1102_FIX
+ 	, {
+@@ -2668,6 +2707,9 @@ static struct phy_driver nxp_drivers[] = {
+ #if LINUX_VERSION_CODE <= KERNEL_VERSION(4,5,0)
+ 	.driver = {.owner = THIS_MODULE},
+ #endif
++#if LINUX_VERSION_CODE >= KERNEL_VERSION(4,13,1)
++	.set_loopback = nxp_set_loopback,
++#endif
+ 	}
+ #endif
+ };
+diff --git a/drivers/net/phy/tja110x.h b/drivers/net/phy/tja110x.h
+index f3cde50..a30aa20 100644
+--- a/drivers/net/phy/tja110x.h
++++ b/drivers/net/phy/tja110x.h
+@@ -74,6 +74,7 @@
+ #define CFG1_LOCWUPHY             BIT(10)
+ #define CFG1_MII_MODE             (0x00000300U)
+ #define CFG1_MII_DRIVER           BIT(7)
++#define CFG1_RMII_25MHZ_MODE      BIT(9)
+ #define CFG1_SLEEP_CONFIRM        BIT(6)
+ #define TJA1100_CFG1_LED_MODE     (0x00000030U)
+ #define TJA1100_CFG1_LED_EN       BIT(3)
+@@ -155,8 +156,7 @@
+  * include/uapi/linux/ethtool.h
+  */
+ #define ESTATUS_100T1_FULL        BIT(7)
+-#define SUPPORTED_100BASET1_FULL  BIT(27)
+-#define ADVERTISED_100BASET1_FULL BIT(27)
++#define SUPPORTED_100BASET1_FULL  SUPPORTED_100baseT_Full
+ 
+ 
+ /*******************************************************************************
+-- 
+2.7.4
+

@@ -1,0 +1,57 @@
+From b300c148ccd01753257ad55040cf0f53c53d5aad Mon Sep 17 00:00:00 2001
+From: Robert Lehmann <robert.lehmann@sitec-systems.de>
+Date: Thu, 2 Mar 2017 11:20:57 +0000
+Subject: [PATCH] imx6sx-s4: Change information for SPI devices
+
+Change information for S4 internal SPI devices.
+
+* remove not needed gpios from CAN1 transceiver
+* change interrupt gpio from CAN2 controller
+* Add driver for low power MCU
+
+Ticket #1680
+---
+ arch/arm/boot/dts/imx6sx-s4.dts | 17 +++++++++++------
+ 1 file changed, 11 insertions(+), 6 deletions(-)
+
+diff --git a/arch/arm/boot/dts/imx6sx-s4.dts b/arch/arm/boot/dts/imx6sx-s4.dts
+index 681bf90..0b2936b 100644
+--- a/arch/arm/boot/dts/imx6sx-s4.dts
++++ b/arch/arm/boot/dts/imx6sx-s4.dts
+@@ -312,22 +312,27 @@
+ 	pinctrl-0 = <&pinctrl_ecspi3>;
+ 	status = "okay";
+ 
+-	spidev0: spi@0 {
++	can1: spi@0 {
+ 		spi-max-frequency = <1000000>;
+ 		reg = <0>;
+ 		spi-cpha;
+ 		compatible = "nxp,tja1145";
+-		supply-gpio = <506>;
+-		standby-gpio = <504>;
+ 	};
+ 
+-	spidev1: spi@1 {
++	can2: spi@1 {
+ 		compatible = "microchip,mcp2515";
+ 		spi-max-frequency = <1000000>;
+ 		reg = <1>;
+ 		clocks = <&clk20M>;
+-		interrupt-parent = <&gpio3>;
+-		interrupts = <15 GPIO_ACTIVE_LOW>;
++		interrupt-parent = <&gpio1>;
++		interrupts = <3 GPIO_ACTIVE_LOW>;
++	};
++
++	msp430: spi@3 {
++		compatible = "sitec,sitec-lp";
++		spi-max-frequency = <1000000>;
++		reg = <3>;
++		reset-gpio = <&gpio3 18 GPIO_ACTIVE_HIGH>;
+ 	};
+ };
+ 
+-- 
+2.1.4
+

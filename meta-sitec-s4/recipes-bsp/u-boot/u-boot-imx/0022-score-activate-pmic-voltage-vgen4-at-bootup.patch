@@ -1,0 +1,46 @@
+From 264c0697e3b67b3f9189a993b70063d434c56d0c Mon Sep 17 00:00:00 2001
+From: Robert Lehmann <robert.lehmann@sitec-systems.de>
+Date: Mon, 10 Dec 2018 08:03:44 +0100
+Subject: [PATCH] score: activate pmic voltage vgen4 at bootup
+
+setting the pmic output to 3p3.
+
+ticket #2680
+---
+ board/sitec-systems/score/score.c | 13 +++++++++++++
+ 1 file changed, 13 insertions(+)
+
+diff --git a/board/sitec-systems/score/score.c b/board/sitec-systems/score/score.c
+index 0bfa34f..619ddef 100644
+--- a/board/sitec-systems/score/score.c
++++ b/board/sitec-systems/score/score.c
+@@ -399,6 +399,7 @@ static void setup_gpio(void)
+ #define PFUZE100_SW1CCONF	0x32
+ #define PFUZE100_SW1ABC_SETP(x)	((x - 3000) / 250)
+ #define PFUZE100_VGEN5CTL	0x70
++#define PFUZE100_VGEN4CTL	0x6F
+ 
+ /* set all switches APS in normal and PFM mode in standby */
+ static int setup_pmic_mode(int chip)
+@@ -506,6 +507,18 @@ static int setup_pmic_voltages(void)
+             return -1;
+         }
+ 
++        printf("Setting VGEN4 Value\n");
++        if (i2c_read(CONFIG_PMIC_I2C_SLAVE, PFUZE100_VGEN4CTL, 1, &value, 1)) {
++            printf("Read VGEN4CTL error!\n");
++            return -1;
++        }
++        value &= ~0x1F;
++        value |= 0x1F;
++        if (i2c_write(CONFIG_PMIC_I2C_SLAVE, PFUZE100_VGEN4CTL, 1, &value, 1)) {
++            printf("Set VGEN4CTL error!\n");
++            return -1;
++        }
++
+         /* Enable power of VGEN5 3V3, needed for SD3 */
+         if (i2c_read(CONFIG_PMIC_I2C_SLAVE, PFUZE100_VGEN5CTL, 1, &value, 1)) {
+             printf("Read VGEN5CTL error!\n");
+-- 
+2.7.4
+

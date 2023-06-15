@@ -1,0 +1,25 @@
+From 27142b1a49f20895a50085f521f7e1c78890d3c5 Mon Sep 17 00:00:00 2001
+From: Robert Lehmann <robert.lehmann@sitec-systems.de>
+Date: Mon, 27 Jun 2016 09:53:17 +0200
+Subject: [PATCH 1000/1003] Makefile: Add sitec label to version
+
+---
+ Makefile | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/Makefile b/Makefile
+index cf35f6b..8066770 100644
+--- a/Makefile
++++ b/Makefile
+@@ -1,7 +1,7 @@
+ VERSION = 4
+ PATCHLEVEL = 1
+ SUBLEVEL = 15
+-EXTRAVERSION =
++EXTRAVERSION = -sitec
+ NAME = Series 4800
+ 
+ # *DOCUMENTATION*
+-- 
+1.9.1
+

@@ -1,0 +1,37 @@
+From 7bf94e07246211719fa20b84a6f0fba839ad6f22 Mon Sep 17 00:00:00 2001
+From: Robert Lehmann <robert.lehmann@sitec-systems.de>
+Date: Tue, 16 Aug 2016 15:39:05 +0200
+Subject: [PATCH 2/2] arch:arm:Kconfig: Add score board to arm configuration
+
+Ticket #1353
+---
+ arch/arm/Kconfig | 6 ++++++
+ 1 file changed, 6 insertions(+)
+
+diff --git a/arch/arm/Kconfig b/arch/arm/Kconfig
+index ad986f1..33271c4 100644
+--- a/arch/arm/Kconfig
++++ b/arch/arm/Kconfig
+@@ -768,6 +768,11 @@ config TARGET_JORNADA
+ 	bool "Support jornada"
+ 	select CPU_SA1100
+ 
++config TARGET_SCORE
++	bool "Support score"
++	select CPU_V7
++	select SUPPORT_SPL
++
+ config ARCH_UNIPHIER
+ 	bool "Panasonic UniPhier platform"
+ 	select CPU_V7
+@@ -947,6 +952,7 @@ source "board/work-microwave/work_92105/Kconfig"
+ source "board/xaeniax/Kconfig"
+ source "board/xilinx/zynqmp/Kconfig"
+ source "board/zipitz2/Kconfig"
++source "board/sitec-systems/score/Kconfig"
+ 
+ source "arch/arm/Kconfig.debug"
+ 
+-- 
+2.7.4
+

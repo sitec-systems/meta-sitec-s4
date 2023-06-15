@@ -1,0 +1,6 @@
+#!/bin/sh
+PPPCONN=/var/run/ppp.conn
+if [ -f $PPPCONN ]; then
+	rm $PPPCONN
+	logger "Connections successfully closed"
+fi

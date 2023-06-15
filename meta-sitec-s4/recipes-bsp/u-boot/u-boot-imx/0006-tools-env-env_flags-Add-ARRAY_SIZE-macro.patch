@@ -1,0 +1,23 @@
+From 7fbba894f22c22358d3ea0563cd672fb28996e57 Mon Sep 17 00:00:00 2001
+From: Robert Lehmann <robert.lehmann@sitec-systems.de>
+Date: Wed, 17 Aug 2016 11:55:41 +0200
+Subject: [PATCH] tools: env: env_flags: Add ARRAY_SIZE macro
+
+Add the macro ARRAY_SIZE which is required for compilation of the
+environment tools
+
+Ticket #1353
+---
+ tools/env/env_flags.c | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/tools/env/env_flags.c b/tools/env/env_flags.c
+index b261cb8..63a4a5b 100644
+--- a/tools/env/env_flags.c
++++ b/tools/env/env_flags.c
+@@ -1 +1,2 @@
++#define ARRAY_SIZE(x) (sizeof(x) / sizeof((x)[0]))
+ #include "../../common/env_flags.c"
+-- 
+2.7.4
+

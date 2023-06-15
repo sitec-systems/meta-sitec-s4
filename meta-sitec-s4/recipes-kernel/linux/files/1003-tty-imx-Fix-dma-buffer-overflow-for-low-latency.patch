@@ -1,0 +1,33 @@
+From 4fab8c45f86852c3662a8ae828788800f5694604 Mon Sep 17 00:00:00 2001
+From: Robert Lehmann <robert.lehmann@sitec-systems.de>
+Date: Mon, 27 Jun 2016 10:59:27 +0200
+Subject: [PATCH 1003/1003] tty: imx: Fix dma buffer overflow for low latency
+
+The driver uses the dma if the option UPF_LOW_LATENCY is given to the
+interface by the userspace tool. This should not be done, because then
+the driver detects buffer overflows in the dma buffer.
+
+This is a port of the solution for the Ticket #937
+
+Ticket #1239
+---
+ drivers/tty/serial/imx.c | 3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
+
+diff --git a/drivers/tty/serial/imx.c b/drivers/tty/serial/imx.c
+index c9bd603..fa9c900 100644
+--- a/drivers/tty/serial/imx.c
++++ b/drivers/tty/serial/imx.c
+@@ -1147,7 +1147,8 @@ static int imx_startup(struct uart_port *port)
+ 
+ 	/* Can we enable the DMA support? */
+ 	if (is_imx6q_uart(sport) && !uart_console(port)
+-		&& !sport->dma_is_inited)
++		&& !sport->dma_is_inited
++		&& !sport->port.flags == UPF_LOW_LATENCY)
+ 		imx_uart_dma_init(sport);
+ 
+ 	if (sport->dma_is_inited)
+-- 
+1.9.1
+

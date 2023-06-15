@@ -1,0 +1,46 @@
+From ee0ee0a7329031a93d67b495a0b304c1b25b4c43 Mon Sep 17 00:00:00 2001
+From: Robert Lehmann <robert.lehmann@sitec-systems.de>
+Date: Mon, 5 Sep 2016 14:28:10 +0200
+Subject: [PATCH 1010/1014] mach-imx6sx: Change direction of reference clk
+
+Change the direction of the reference clk for the ENET2 interface. The
+pin ENET2_TX_CLK will be used as input for an external osc to clock the
+whole mac core.
+
+Ticket #1379
+---
+ arch/arm/mach-imx/mach-imx6sx.c | 15 +++++++++++----
+ 1 file changed, 11 insertions(+), 4 deletions(-)
+
+diff --git a/arch/arm/mach-imx/mach-imx6sx.c b/arch/arm/mach-imx/mach-imx6sx.c
+index 377d11b..41efafa 100644
+--- a/arch/arm/mach-imx/mach-imx6sx.c
++++ b/arch/arm/mach-imx/mach-imx6sx.c
+@@ -59,13 +59,20 @@ static void __init imx6sx_enet_clk_sel(void)
+ 	struct regmap *gpr;
+ 
+ 	gpr = syscon_regmap_lookup_by_compatible("fsl,imx6sx-iomuxc-gpr");
+-	if (!IS_ERR(gpr)) {
++	if (IS_ERR(gpr)) {
++		pr_err("failed to find fsl,imx6sx-iomux-gpr regmap\n");
++		return;
++	}
++    if (of_machine_is_compatible("fsl,imx6sx-s4")) {
+ 		regmap_update_bits(gpr, IOMUXC_GPR1,
+-				   IMX6SX_GPR1_FEC_CLOCK_MUX_SEL_MASK, 0);
++						   IMX6SX_GPR1_FEC_CLOCK_MUX_SEL_MASK, IMX6SX_GPR1_FEC_CLOCK_MUX_SEL_MASK);
+ 		regmap_update_bits(gpr, IOMUXC_GPR1,
+-				   IMX6SX_GPR1_FEC_CLOCK_PAD_DIR_MASK, 0);
++						   IMX6SX_GPR1_FEC_CLOCK_PAD_DIR_MASK, 0);
+ 	} else {
+-		pr_err("failed to find fsl,imx6sx-iomux-gpr regmap\n");
++		regmap_update_bits(gpr, IOMUXC_GPR1,
++						   IMX6SX_GPR1_FEC_CLOCK_MUX_SEL_MASK, 0);
++		regmap_update_bits(gpr, IOMUXC_GPR1,
++						   IMX6SX_GPR1_FEC_CLOCK_PAD_DIR_MASK, 0);
+ 	}
+ }
+ 
+-- 
+2.7.4
+

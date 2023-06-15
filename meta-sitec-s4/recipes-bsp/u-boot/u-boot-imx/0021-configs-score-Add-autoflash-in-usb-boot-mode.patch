@@ -1,0 +1,425 @@
+From eaff8daec9883c393894cc242fb7675c9cfb8026 Mon Sep 17 00:00:00 2001
+From: Robert Lehmann <robert.lehmann@sitec-systems.de>
+Date: Mon, 27 Nov 2017 09:17:02 +0100
+Subject: [PATCH] configs: score: Add autoflash in usb boot mode
+
+Ticket #2152
+---
+ include/configs/score.h | 269 +++++++++++++++++++++++++-----------------------
+ 1 file changed, 141 insertions(+), 128 deletions(-)
+
+diff --git a/include/configs/score.h b/include/configs/score.h
+index c476d56..5afbceb 100644
+--- a/include/configs/score.h
++++ b/include/configs/score.h
+@@ -11,8 +11,8 @@
+ #define __SCORE_CONFIG_H
+ 
+ #include <asm/arch/imx-regs.h>
+-#include <linux/sizes.h>
+ #include <asm/imx-common/gpio.h>
++#include <linux/sizes.h>
+ 
+ #define CONFIG_SYS_BOOTM_LEN SZ_32M
+ 
+@@ -37,14 +37,14 @@
+ #define CONFIG_REVISION_TAG
+ 
+ /* Size of malloc() pool */
+-#define CONFIG_SYS_MALLOC_LEN		(16 * SZ_1M)
++#define CONFIG_SYS_MALLOC_LEN (16 * SZ_1M)
+ 
+ #define CONFIG_BOARD_EARLY_INIT_F
+ #define CONFIG_BOARD_LATE_INIT
+ #define CONFIG_MXC_GPIO
+ 
+ #define CONFIG_MXC_UART
+-#define CONFIG_MXC_UART_BASE		UART1_BASE
++#define CONFIG_MXC_UART_BASE UART1_BASE
+ 
+ #define CONFIG_CMD_FUSE
+ #ifdef CONFIG_CMD_FUSE
+@@ -56,8 +56,8 @@
+ /* MMC Configs */
+ #define CONFIG_FSL_ESDHC
+ #define CONFIG_FSL_USDHC
+-#define CONFIG_SYS_FSL_ESDHC_ADDR	0
+-#define CONFIG_SYS_FSL_USDHC_NUM	2
++#define CONFIG_SYS_FSL_ESDHC_ADDR 0
++#define CONFIG_SYS_FSL_USDHC_NUM 2
+ 
+ #define CONFIG_MMC
+ #define CONFIG_CMD_MMC
+@@ -66,7 +66,7 @@
+ #define CONFIG_DOS_PARTITION
+ #define CONFIG_SUPPORT_EMMC_BOOT /* eMMC specific */
+ 
+-#define CONFIG_BAUDRATE			115200
++#define CONFIG_BAUDRATE 115200
+ 
+ #undef CONFIG_BOOTM_NETBSD
+ #undef CONFIG_BOOTM_PLAN9
+@@ -81,14 +81,14 @@
+ #define CONFIG_FEC_MXC
+ #define CONFIG_MII
+ 
+-#define IMX_FEC_BASE			        ENET2_BASE_ADDR
+-#define CONFIG_FEC_MXC_PHYADDR          1
+-#define CONFIG_FEC_XCV_TYPE             RMII
+-#define CONFIG_ETHPRIME                 "FEC"
++#define IMX_FEC_BASE ENET2_BASE_ADDR
++#define CONFIG_FEC_MXC_PHYADDR 1
++#define CONFIG_FEC_XCV_TYPE RMII
++#define CONFIG_ETHPRIME "FEC"
+ 
+ #define CONFIG_PHYLIB
+ #define CONFIG_PHY_SMSC
+-#define CONFIG_FEC_DMA_MINALIGN		64
++#define CONFIG_FEC_DMA_MINALIGN 64
+ /*#define CONFIG_FEC_MXC_25M_REF_CLK*/
+ #endif
+ 
+@@ -97,20 +97,20 @@
+ 
+ /* allow to overwrite serial and ethaddr */
+ #define CONFIG_ENV_OVERWRITE
+-#define CONFIG_CONS_INDEX		1
++#define CONFIG_CONS_INDEX 1
+ 
+ /* I2C configs */
+ #define CONFIG_CMD_I2C
+ #define CONFIG_SYS_I2C
+ #define CONFIG_SYS_I2C_MXC
+-#define CONFIG_SYS_I2C_SPEED		100000
++#define CONFIG_SYS_I2C_SPEED 100000
+ 
+ /* PMIC */
+ #define CONFIG_PFUZE100_PMIC_I2C
+ /*#undef CONFIG_LDO_BYPASS_CHECK*/
+ #ifdef CONFIG_PFUZE100_PMIC_I2C
+-#define CONFIG_PMIC_I2C_BUS		3
+-#define CONFIG_PMIC_I2C_SLAVE		0x8
++#define CONFIG_PMIC_I2C_BUS 3
++#define CONFIG_PMIC_I2C_SLAVE 0x8
+ #endif
+ 
+ #define CONFIG_CMD_ASKENV
+@@ -122,7 +122,10 @@
+ #define CONFIG_PCA953X_OUT_INIT 0x8001
+ #define CONFIG_CMD_PCA953X_INFO
+ #define CONFIG_SYS_I2C_PCA953X_ADDR 0x20
+-#define CONFIG_SYS_I2C_PCA953X_WIDTH { {0x20, 16} }
++#define CONFIG_SYS_I2C_PCA953X_WIDTH                                           \
++  {                                                                            \
++    { 0x20, 16 }                                                               \
++  }
+ 
+ /* Command definition */
+ #include <config_cmd_default.h>
+@@ -131,145 +134,155 @@
+ #undef CONFIG_CMD_FPGA
+ #undef CONFIG_CMD_IMLS
+ 
+-#define CONFIG_BOOTDELAY		1
+-
+-#define CONFIG_LOADADDR			0x80800000
+-#define CONFIG_SYS_TEXT_BASE		0x87800000
++#define CONFIG_BOOTDELAY 1
+ 
++#define CONFIG_LOADADDR 0x80800000
++#define CONFIG_SYS_TEXT_BASE 0x87800000
+ 
+-#define CONFIG_SYS_AUXCORE_BOOTDATA 0x78000000 /* Set to QSPI2 B flash at default */
++#define CONFIG_SYS_AUXCORE_BOOTDATA                                            \
++  0x78000000 /* Set to QSPI2 B flash at default */
+ #ifndef CONFIG_SYS_AUXCORE_FASTUP
+-#define CONFIG_CMD_BOOTAUX /* Boot M4 by command, disable this when M4 fast up */
++#define CONFIG_CMD_BOOTAUX /* Boot M4 by command, disable this when M4 fast up \
++                              */
+ #define CONFIG_CMD_SETEXPR
+ #endif
+ 
+-#define CONFIG_SYS_MMC_ENV_DEV		1  /*USDHC3*/
+-#define CONFIG_SYS_MMC_ENV_PART		2	/* user area */
+-#define CONFIG_MMCROOT			"/dev/mmcblk2p2"  /* USDHC3 */
++#define CONFIG_SYS_MMC_ENV_DEV 1        /*USDHC3*/
++#define CONFIG_SYS_MMC_ENV_PART 2       /* user area */
++#define CONFIG_MMCROOT "/dev/mmcblk2p2" /* USDHC3 */
+ 
+ #ifdef CONFIG_CMD_BOOTAUX
+-#define UPDATE_M4_ENV \
+-    "m4image=m4_qspi.bin\0" \
+-    "loadm4image=fatload mmc ${mmcdev}:${mmcpart} ${loadaddr} ${m4image}\0" \
+-    "update_m4_from_sd=" \
+-        "if sf probe 1:0; then " \
+-            "if run loadm4image; then " \
+-                "setexpr fw_sz ${filesize} + 0xffff; " \
+-                "setexpr fw_sz ${fw_sz} / 0x10000; "	\
+-                "setexpr fw_sz ${fw_sz} * 0x10000; "	\
+-                "sf erase 0x0 ${fw_sz}; " \
+-                "sf write ${loadaddr} 0x0 ${filesize}; " \
+-            "fi; " \
+-        "fi\0" \
+-    "m4boot=sf probe 1:0; bootaux "__stringify(CONFIG_SYS_AUXCORE_BOOTDATA)"\0"
++#define UPDATE_M4_ENV                                                          \
++  "m4image=m4_qspi.bin\0"                                                      \
++  "loadm4image=fatload mmc ${mmcdev}:${mmcpart} ${loadaddr} ${m4image}\0"      \
++  "update_m4_from_sd="                                                         \
++  "if sf probe 1:0; then "                                                     \
++  "if run loadm4image; then "                                                  \
++  "setexpr fw_sz ${filesize} + 0xffff; "                                       \
++  "setexpr fw_sz ${fw_sz} / 0x10000; "                                         \
++  "setexpr fw_sz ${fw_sz} * 0x10000; "                                         \
++  "sf erase 0x0 ${fw_sz}; "                                                    \
++  "sf write ${loadaddr} 0x0 ${filesize}; "                                     \
++  "fi; "                                                                       \
++  "fi\0"                                                                       \
++  "m4boot=sf probe 1:0; bootaux "__stringify(CONFIG_SYS_AUXCORE_BOOTDATA) "\0"
+ #else
+ #define UPDATE_M4_ENV ""
+ #endif
+ 
+-#define CONFIG_MFG_ENV_SETTINGS \
+-    "mfgtool_args=setenv bootargs console=${console},${baudrate},uart_from_osc " \
+-        "init=/sbin/init " \
+-        "root=/dev/ram0 " \
+-        "mtdparts=${mtdparts} "\
+-        "\0" \
+-    "uboot_addr=0x83800000\0" \
+-	"uboot_flash=crc32 83800000 100; askenv crcvalid \"Is CRC32 valid [y/n]\" 1; if test $crcvalid = \"y\"; then sf probe && sf erase 0x0 0x60000 && sf write ${uboot_addr} 0x400 0x60000; fi\0" \
+-	"burning=fuse prog -y 0 5 0x2a000030 && fuse prog -y 0 6 0x10\0" \
+-	"bootusb=run mfgtool_args;bootm ${loadaddr} - ${fdt_addr};\0" \
+-	"bootcmd_mfg=false\0" \
+-
+-#define CONFIG_BOOT_COMMON \
+-    "fdt_addr=0x83000000\0" \
+-    "fdt_high=0xffffffff\0" \
+-    "console=ttymxc0\0" \
+-    "image=uImage\0" \
+-    "add_args=\0" \
+-    "mtdparts=gpmi-nand:512k(ubootenv),8m(kernel),2m(dtb),8m(kernel_backup),2m(dtb_backup),-(rootfs)\0" \
+-    "update_nor=fatload mmc 0:1 ${loadaddr} u-boot.imx && sf probe && sf erase 0x0 0x60000 && sf write ${loadaddr} 0x400 0x60000\0" \
+-    "update_nor_eval=fatload mmc 1:1 ${loadaddr} u-boot.imx && sf probe && sf erase 0x0 0x60000 && sf write ${loadaddr} 0x400 0x60000\0"
+-
+-#define CONFIG_BOOT_KERNEL_ROOTFS_NAND \
+-    "getrootname=if test $root_alt -eq 0; then setenv rootname rootfs; else; setenv rootname rootfs_alt; fi;\0" \
+-    "setrootnand=setenv rootnand ubi0:${rootname} rootfstype=ubifs\0" \
+-    "root_alt=0\0" \
+-    "kernel_alt=0\0" \
+-    "nandkernel=if test $kernel_alt -eq 0; then nand read ${loadaddr} 0x80000 0x800000; else; nand read ${loadaddr} 0xa80000 0x800000; fi;\0" \
+-    "nandfdt=if test $kernel_alt -eq 0 ; then nand read ${fdt_addr} 0x880000 0x200000; else; nand read ${fdt_addr} 0x1280000 0x200000; fi;\0" \
+-    "nandargs=setenv bootargs " \
+-        " console=${console},${baudrate} panic=2 uart_from_osc ubi.mtd=5 root=${rootnand} mtdparts=${mtdparts} ${add_args}\0" \
+-    "bootnand=run getrootname && " \
+-        "run setrootnand && " \
+-        "run nandargs && " \
+-        "run nandfdt && " \
+-        "run nandkernel && " \
+-        "bootm ${loadaddr} - ${fdt_addr}\0"
+-
+-#define CONFIG_BOOT_KERNEL_ROOTFS_MMC \
+-    "rootmmc=/dev/mmcblk1p2 rootwait rw\0" \
+-    "mmckernel=fatload mmc 0:1 ${loadaddr} ${image}\0" \
+-    "mmcfdt=fatload mmc 0:1 ${fdt_addr} imx6sx-s4.dtb\0" \
+-    "mmcargs=setenv bootargs console=${console},${baudrate} uart_from_osc root=${rootmmc} mtdparts=${mtdparts}\0" \
+-    "bootmmc=run mmcargs && " \
+-        "run mmckernel && " \
+-        "run mmcfdt && " \
+-        "bootm ${loadaddr} - ${fdt_addr}\0" \
+-    "rootmmc_eval=/dev/mmcblk2p2 rootwait rw\0" \
+-    "mmckernel_eval=fatload mmc 1:1 ${loadaddr} ${image}\0" \
+-    "mmcfdt_eval=fatload mmc 1:1 ${fdt_addr} imx6sx-score.dtb\0" \
+-    "mmcargs_eval=setenv bootargs console=${console},${baudrate} uart_from_osc root=${rootmmc_eval} mtdparts=${mtdparts}\0" \
+-    "bootmmc_eval=run mmcargs_eval && " \
+-        "run mmckernel_eval && " \
+-        "run mmcfdt_eval && " \
+-        "bootm ${loadaddr} - ${fdt_addr}\0"
+-
+-
+-#define CONFIG_EXTRA_ENV_SETTINGS \
+-    CONFIG_MFG_ENV_SETTINGS \
+-    CONFIG_BOOT_COMMON \
+-    CONFIG_BOOT_KERNEL_ROOTFS_NAND \
+-    CONFIG_BOOT_KERNEL_ROOTFS_MMC \
+-    "bootcmd=run bootnand\0"
++#define CONFIG_MFG_ENV_SETTINGS                                                \
++  "mfgtool_args=setenv bootargs console=${console},${baudrate},uart_from_osc " \
++  "init=/sbin/init "                                                           \
++  "root=/dev/ram0 "                                                            \
++  "mtdparts=${mtdparts} "                                                      \
++  "\0"                                                                         \
++  "uboot_addr=0x83800000\0"                                                    \
++  "uboot_flash=crc32 83800000 100; sf probe && sf erase 0x0 0x60000 && sf "    \
++  "write ${uboot_addr} 0x400 0x60000\0"                                        \
++  "burning=fuse prog -y 0 5 0x2a000030 && fuse prog -y 0 6 0x10\0"             \
++  "bootusb=run mfgtool_args;bootm ${loadaddr} - ${fdt_addr};\0"                \
++  "bootcmd_mfg=run uboot_flash && run burning && saveenv && run bootusb\0"
++
++#define CONFIG_BOOT_COMMON                                                     \
++  "fdt_addr=0x83000000\0"                                                      \
++  "fdt_high=0xffffffff\0"                                                      \
++  "console=ttymxc0\0"                                                          \
++  "image=uImage\0"                                                             \
++  "add_args=\0"                                                                \
++  "mtdparts=gpmi-nand:512k(ubootenv),8m(kernel),2m(dtb),8m(kernel_backup),2m(" \
++  "dtb_backup),-(rootfs)\0"                                                    \
++  "update_nor=fatload mmc 0:1 ${loadaddr} u-boot.imx && sf probe && sf erase " \
++  "0x0 0x60000 && sf write ${loadaddr} 0x400 0x60000\0"                        \
++  "update_nor_eval=fatload mmc 1:1 ${loadaddr} u-boot.imx && sf probe && sf "  \
++  "erase 0x0 0x60000 && sf write ${loadaddr} 0x400 0x60000\0"
++
++#define CONFIG_BOOT_KERNEL_ROOTFS_NAND                                         \
++  "getrootname=if test $root_alt -eq 0; then setenv rootname rootfs; else; "   \
++  "setenv rootname rootfs_alt; fi;\0"                                          \
++  "setrootnand=setenv rootnand ubi0:${rootname} rootfstype=ubifs\0"            \
++  "root_alt=0\0"                                                               \
++  "kernel_alt=0\0"                                                             \
++  "nandkernel=if test $kernel_alt -eq 0; then nand read ${loadaddr} 0x80000 "  \
++  "0x800000; else; nand read ${loadaddr} 0xa80000 0x800000; fi;\0"             \
++  "nandfdt=if test $kernel_alt -eq 0 ; then nand read ${fdt_addr} 0x880000 "   \
++  "0x200000; else; nand read ${fdt_addr} 0x1280000 0x200000; fi;\0"            \
++  "nandargs=setenv bootargs "                                                  \
++  " console=${console},${baudrate} panic=2 uart_from_osc ubi.mtd=5 "           \
++  "root=${rootnand} mtdparts=${mtdparts} ${add_args}\0"                        \
++  "bootnand=run getrootname && "                                               \
++  "run setrootnand && "                                                        \
++  "run nandargs && "                                                           \
++  "run nandfdt && "                                                            \
++  "run nandkernel && "                                                         \
++  "bootm ${loadaddr} - ${fdt_addr}\0"
++
++#define CONFIG_BOOT_KERNEL_ROOTFS_MMC                                          \
++  "rootmmc=/dev/mmcblk1p2 rootwait rw\0"                                       \
++  "mmckernel=fatload mmc 0:1 ${loadaddr} ${image}\0"                           \
++  "mmcfdt=fatload mmc 0:1 ${fdt_addr} imx6sx-s4.dtb\0"                         \
++  "mmcargs=setenv bootargs console=${console},${baudrate} uart_from_osc "      \
++  "root=${rootmmc} mtdparts=${mtdparts}\0"                                     \
++  "bootmmc=run mmcargs && "                                                    \
++  "run mmckernel && "                                                          \
++  "run mmcfdt && "                                                             \
++  "bootm ${loadaddr} - ${fdt_addr}\0"                                          \
++  "rootmmc_eval=/dev/mmcblk2p2 rootwait rw\0"                                  \
++  "mmckernel_eval=fatload mmc 1:1 ${loadaddr} ${image}\0"                      \
++  "mmcfdt_eval=fatload mmc 1:1 ${fdt_addr} imx6sx-score.dtb\0"                 \
++  "mmcargs_eval=setenv bootargs console=${console},${baudrate} uart_from_osc " \
++  "root=${rootmmc_eval} mtdparts=${mtdparts}\0"                                \
++  "bootmmc_eval=run mmcargs_eval && "                                          \
++  "run mmckernel_eval && "                                                     \
++  "run mmcfdt_eval && "                                                        \
++  "bootm ${loadaddr} - ${fdt_addr}\0"
++
++#define CONFIG_EXTRA_ENV_SETTINGS                                              \
++  CONFIG_MFG_ENV_SETTINGS                                                      \
++  CONFIG_BOOT_COMMON                                                           \
++  CONFIG_BOOT_KERNEL_ROOTFS_NAND                                               \
++  CONFIG_BOOT_KERNEL_ROOTFS_MMC                                                \
++  "bootcmd=run bootnand\0"
+ 
+ /* Miscellaneous configurable options */
+ #define CONFIG_SYS_LONGHELP
+ #define CONFIG_SYS_HUSH_PARSER
+-#define CONFIG_SYS_PROMPT		"score => "
++#define CONFIG_SYS_PROMPT "score => "
+ #define CONFIG_AUTO_COMPLETE
+-#define CONFIG_SYS_CBSIZE		1024
++#define CONFIG_SYS_CBSIZE 1024
+ 
+ /* Print Buffer Size */
+ #define CONFIG_SYS_PBSIZE (CONFIG_SYS_CBSIZE + sizeof(CONFIG_SYS_PROMPT) + 16)
+-#define CONFIG_SYS_MAXARGS		256
++#define CONFIG_SYS_MAXARGS 256
+ #define CONFIG_SYS_BARGSIZE CONFIG_SYS_CBSIZE
+ 
+ #define CONFIG_CMD_MEMTEST
+-#define CONFIG_SYS_MEMTEST_START	0x80000000
+-#define CONFIG_SYS_MEMTEST_END		(CONFIG_SYS_MEMTEST_START + 0x10000)
++#define CONFIG_SYS_MEMTEST_START 0x80000000
++#define CONFIG_SYS_MEMTEST_END (CONFIG_SYS_MEMTEST_START + 0x10000)
+ 
+-#define CONFIG_SYS_LOAD_ADDR		CONFIG_LOADADDR
+-#define CONFIG_SYS_HZ			1000
++#define CONFIG_SYS_LOAD_ADDR CONFIG_LOADADDR
++#define CONFIG_SYS_HZ 1000
+ 
+ #define CONFIG_CMDLINE_EDITING
+-#define CONFIG_STACKSIZE		SZ_128K
++#define CONFIG_STACKSIZE SZ_128K
+ 
+ /* Physical Memory Map */
+-#define CONFIG_NR_DRAM_BANKS		1
+-#define PHYS_SDRAM			MMDC0_ARB_BASE_ADDR
+-#define PHYS_SDRAM_SIZE			SZ_512M
++#define CONFIG_NR_DRAM_BANKS 1
++#define PHYS_SDRAM MMDC0_ARB_BASE_ADDR
++#define PHYS_SDRAM_SIZE SZ_512M
+ 
+-#define CONFIG_SYS_SDRAM_BASE		PHYS_SDRAM
+-#define CONFIG_SYS_INIT_RAM_ADDR	IRAM_BASE_ADDR
+-#define CONFIG_SYS_INIT_RAM_SIZE	IRAM_SIZE
++#define CONFIG_SYS_SDRAM_BASE PHYS_SDRAM
++#define CONFIG_SYS_INIT_RAM_ADDR IRAM_BASE_ADDR
++#define CONFIG_SYS_INIT_RAM_SIZE IRAM_SIZE
+ 
+-#define CONFIG_SYS_INIT_SP_OFFSET \
+-    (CONFIG_SYS_INIT_RAM_SIZE - GENERATED_GBL_DATA_SIZE)
+-#define CONFIG_SYS_INIT_SP_ADDR \
+-    (CONFIG_SYS_INIT_RAM_ADDR + CONFIG_SYS_INIT_SP_OFFSET)
++#define CONFIG_SYS_INIT_SP_OFFSET                                              \
++  (CONFIG_SYS_INIT_RAM_SIZE - GENERATED_GBL_DATA_SIZE)
++#define CONFIG_SYS_INIT_SP_ADDR                                                \
++  (CONFIG_SYS_INIT_RAM_ADDR + CONFIG_SYS_INIT_SP_OFFSET)
+ 
+ /* FLASH and environment organization */
+ #define CONFIG_SYS_NO_FLASH
+ 
+-#define CONFIG_ENV_SIZE			SZ_8K
++#define CONFIG_ENV_SIZE SZ_8K
+ 
+ #define CONFIG_SYS_USE_SPINOR
+ #define CONFIG_ENV_IS_IN_NAND
+@@ -280,10 +293,10 @@
+ #define CONFIG_SPI_FLASH_MACRONIX
+ #define CONFIG_SPI
+ #define CONFIG_MXC_SPI
+-#define CONFIG_SF_DEFAULT_BUS   2
++#define CONFIG_SF_DEFAULT_BUS 2
+ #define CONFIG_SF_DEFAULT_SPEED 20000000
+ #define CONFIG_SF_DEFAULT_MODE SPI_MODE_0
+-#define CONFIG_SF_DEFAULT_CS   2
++#define CONFIG_SF_DEFAULT_CS 2
+ 
+ /* NAND stuff */
+ #define CONFIG_CMD_NAND
+@@ -292,14 +305,14 @@
+ #define CONFIG_CMD_EXT2
+ #define CONFIG_NAND_MXS
+ #define CONFIG_SYS_MAX_NAND_DEVICE 1
+-#define CONFIG_SYS_NAND_BASE		MXS_GPMI_BASE
++#define CONFIG_SYS_NAND_BASE MXS_GPMI_BASE
+ #define CONFIG_SYS_NAND_5_ADDR_CYCLE
+ #define CONFIG_SYS_NAND_ONFI_DETECTION
+ #define CONFIG_APBH_DMA
+ #define CONFIG_APBH_DMA_BURST
+ #define CONFIG_APBH_DMA_BURST8
+ 
+-#define CONFIG_ENV_OFFSET	    0
++#define CONFIG_ENV_OFFSET 0
+ 
+ #define CONFIG_OF_LIBFDT
+ #define CONFIG_CMD_BOOTZ
+@@ -318,9 +331,9 @@
+ #define CONFIG_EHCI_HCD_INIT_AFTER_RESET
+ #define CONFIG_USB_HOST_ETHER
+ #define CONFIG_USB_ETHER_ASIX
+-#define CONFIG_MXC_USB_PORTSC  (PORT_PTS_UTMI | PORT_PTS_PTW)
+-#define CONFIG_MXC_USB_FLAGS   0
++#define CONFIG_MXC_USB_PORTSC (PORT_PTS_UTMI | PORT_PTS_PTW)
++#define CONFIG_MXC_USB_FLAGS 0
+ #define CONFIG_USB_MAX_CONTROLLER_COUNT 2
+ #endif
+ 
+-#endif				/* __CONFIG_H */
++#endif /* __CONFIG_H */
+-- 
+2.7.4
+

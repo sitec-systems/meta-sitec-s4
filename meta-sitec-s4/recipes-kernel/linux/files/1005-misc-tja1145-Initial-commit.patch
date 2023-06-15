@@ -1,0 +1,347 @@
+From 381911681b9844f5abee2a41a6796435bd105ca9 Mon Sep 17 00:00:00 2001
+From: Robert Lehmann <robert.lehmann@sitec-systems.de>
+Date: Wed, 6 Jul 2016 16:12:52 +0200
+Subject: [PATCH] misc:tja1145: Initial commit
+
+Initial commit of the base driver. This driver find the tja1145 chip and
+initialize it. It although is able to change the operation mode. That
+should supply a basic functionallity for the CAN interface.
+
+Ticket #1262
+---
+ drivers/misc/Kconfig   |   8 ++
+ drivers/misc/Makefile  |   1 +
+ drivers/misc/tja1145.c | 290 +++++++++++++++++++++++++++++++++++++++++++++++++
+ 3 files changed, 299 insertions(+)
+ create mode 100644 drivers/misc/tja1145.c
+
+diff --git a/drivers/misc/Kconfig b/drivers/misc/Kconfig
+index 8f1675b..e52a938 100644
+--- a/drivers/misc/Kconfig
++++ b/drivers/misc/Kconfig
+@@ -166,6 +166,14 @@ config TIFM_CORE
+ 	  To compile this driver as a module, choose M here: the module will
+ 	  be called tifm_core.
+ 
++config TJA1145
++	tristate "TJA1145 CAN-Transceiver driver"
++	select REGMAP_SPI
++	depends on SPI_MASTER
++	help
++	  This driver controls the TJA1145 CAN Transceiver. TODO advanced
++	  description.	
++
+ config TIFM_7XX1
+ 	tristate "TI Flash Media PCI74xx/PCI76xx host adapter support"
+ 	depends on PCI && TIFM_CORE
+diff --git a/drivers/misc/Makefile b/drivers/misc/Makefile
+index 4c8f839..5ee7c3f 100644
+--- a/drivers/misc/Makefile
++++ b/drivers/misc/Makefile
+@@ -38,6 +38,7 @@ obj-$(CONFIG_DS1682)		+= ds1682.o
+ obj-$(CONFIG_TI_DAC7512)	+= ti_dac7512.o
+ obj-$(CONFIG_C2PORT)		+= c2port/
+ obj-$(CONFIG_HMC6352)		+= hmc6352.o
++obj-$(CONFIG_TJA1145) 	    += tja1145.o
+ obj-y				+= eeprom/
+ obj-y				+= cb710/
+ obj-$(CONFIG_SPEAR13XX_PCIE_GADGET)	+= spear13xx_pcie_gadget.o
+diff --git a/drivers/misc/tja1145.c b/drivers/misc/tja1145.c
+new file mode 100644
+index 0000000..cccf196
+--- /dev/null
++++ b/drivers/misc/tja1145.c
+@@ -0,0 +1,290 @@
++/*
++ * Copyright (C) 2016  sitec systems GmbH
++ *
++ * This library is free software; you can redistribute it and/or modify it under
++ * the terms of the GNU General Public License as published by the Free 
++ * Software Foundation; either version 2.1 of the License, or (at your option) 
++ * any later version.
++ *
++ * This library is distributed in the hope that it will be useful, but WITHOUT
++ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or 
++ * FITNESS FOR A PARTICULAR PURPOSE. See the GNU Lesser General Public License
++ * for more details.
++ *
++ * You should have received a copy of the GNU  General Public License
++ * along with this library; if not, write to the Free Software Foundation, 
++ * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110, USA
++ */
++
++#include <linux/module.h>
++#include <linux/spi/spi.h>
++#include <linux/err.h>
++#include <linux/device.h>
++#include <linux/regmap.h>
++#include <linux/slab.h>
++#include <linux/of.h>
++#include <linux/mutex.h>
++
++#define TJA1145_REG_ID 0x7e
++#define TJA1145_ID 0x70
++#define TJA1145_REG_MODE_CTRL 0x01
++#define TJA1145_MODE_SLEEP 0x01
++#define TJA1145_MODE_STANDBY 0x04
++#define TJA1145_MODE_NORMAL 0x07
++
++struct tja1145_priv {
++	struct device *dev;
++	struct regmap *regmap;
++};
++
++struct regmap_config tja1145_regmap_config = {
++	.reg_bits = 8,
++	.val_bits = 8
++};
++
++static int tja1145_write_reg(struct device *dev, unsigned int reg, unsigned int val)
++{
++	struct tja1145_priv *data = dev_get_drvdata(dev);
++	unsigned int rval;
++	int ret;
++
++	ret = regmap_write(data->regmap, reg, val);
++	if (ret < 0) {
++		return ret;
++	}
++
++	ret = regmap_read(data->regmap, reg, &rval);
++	if (ret < 0) {
++		return ret;
++	}
++
++	if (rval != val) {
++		return -EBUSY;
++	}
++	
++	return 0;
++}
++
++static ssize_t tja1145_version_show(struct device *dev,
++									struct device_attribute *attr, char *buf)
++{
++	return sprintf(buf, "Version: 1.0.0\n");
++}
++static DEVICE_ATTR(tja1145_version, S_IRUGO, tja1145_version_show, NULL);
++
++static ssize_t tja1145_mode_store(struct device *dev,
++								  struct device_attribute *attr,
++								  const char *buf,
++								  size_t count)
++{
++	/* struct tja1145_priv *data = dev_get_drvdata(dev); */
++	int ret;
++	
++	if (strncmp(buf, "normal", count) == 0) {
++		ret = tja1145_write_reg(dev, TJA1145_REG_MODE_CTRL, TJA1145_MODE_NORMAL);
++		if (ret) {
++			dev_err(dev, "Can't set operation mode to normal\n");
++			return ret;
++		}
++	} else if (strncmp(buf, "standby", count) == 0) {
++		ret = tja1145_write_reg(dev, TJA1145_REG_MODE_CTRL, TJA1145_MODE_STANDBY);
++		if (ret) {
++			dev_err(dev, "Can't set operation mode to standby\n");
++			return ret;
++		}
++	} else if (strncmp(buf, "sleep", count) == 0) {
++		ret = tja1145_write_reg(dev, TJA1145_REG_MODE_CTRL, TJA1145_MODE_SLEEP);
++		if (ret) {
++			dev_err(dev, "Can't set operation mode to sleep\n");
++			return ret;
++		}
++	} else {
++		dev_err(dev, "Unsupported operation mode\n");
++		return -EINVAL;
++	}
++
++	return 0;
++}
++
++static ssize_t tja1145_mode_show(struct device *dev,
++								 struct device_attribute *attr,
++								 char *buf)
++{
++	struct tja1145_priv *data = dev_get_drvdata(dev);
++	unsigned int mode;
++	int ret;
++
++	ret = regmap_read(data->regmap, TJA1145_REG_MODE_CTRL, &mode);
++	if (ret < 0) {
++		dev_err(dev, "Can't read mode ctrl register\n");
++		return -EBUSY;
++	}
++
++	switch(mode) {
++	case TJA1145_MODE_STANDBY:
++		return sprintf(buf, "standby");
++	case TJA1145_MODE_SLEEP:
++		return sprintf(buf, "sleep");
++	case TJA1145_MODE_NORMAL:
++		return sprintf(buf, "normal");
++	}
++
++	
++	return sprintf(buf, "Unsupported Operation mode\n");
++}
++
++static DEVICE_ATTR(tja1145_mode, S_IWUSR | S_IRUGO, tja1145_mode_show, tja1145_mode_store);
++
++static struct attribute *tja1145_attributes[] = {
++	&dev_attr_tja1145_version.attr,
++	&dev_attr_tja1145_mode.attr,
++	NULL
++};
++
++static const struct attribute_group tja1145_attr_group = {
++	.attrs = tja1145_attributes,
++};
++
++static int tja1145_check_devid(struct device *dev)
++{
++	struct tja1145_priv *data = dev_get_drvdata(dev);
++	unsigned int id;
++	int ret;
++
++	ret = regmap_read(data->regmap, TJA1145_REG_ID, &id);
++	if (ret < 0) {
++		return ret;
++	}
++
++	if (id != TJA1145_ID) {
++		return -ENODEV;
++	}
++
++	return 0;
++}
++
++static int tja1145_init(struct device *dev)
++{
++	struct tja1145_priv *data = dev_get_drvdata(dev);
++	unsigned int mode;
++	int ret;
++
++	ret = regmap_write(data->regmap, TJA1145_REG_MODE_CTRL, TJA1145_MODE_STANDBY);
++	if (ret < 0) {
++		return ret;
++	}
++
++	ret = regmap_read(data->regmap, TJA1145_REG_MODE_CTRL, &mode);
++	if (ret < 0) {
++		return ret;
++	}
++
++	if (mode != TJA1145_MODE_STANDBY) {
++		return -EBUSY;
++	}
++	
++	return 0;
++}
++
++static int tja1145_probe(struct spi_device *client)
++{
++	struct tja1145_priv *data;
++	struct regmap *regmap;
++	struct device *dev;
++	int err = 0;
++
++	err = spi_setup(client);
++	if (err < 0) {
++		dev_err(&client->dev, "Can't setup SPI\n");
++		goto exit;
++	}
++
++	regmap = devm_regmap_init_spi(client, &tja1145_regmap_config);
++	if (IS_ERR(regmap)) {
++		err = PTR_ERR(regmap);
++		dev_err(&client->dev, "Failed to init the regmap for the device\n");
++		goto exit;
++	}
++
++	data = kzalloc(sizeof(struct tja1145_priv), GFP_KERNEL);
++	if (!data) {
++		dev_err(&client->dev, "Not enough memory\n");
++		err = -ENOMEM;
++		goto exit;
++	}
++
++	dev_set_drvdata(&client->dev, data);
++	data->dev = &client->dev;
++	dev = data->dev;
++	data->regmap = regmap;
++
++	err = sysfs_create_group(&dev->kobj, &tja1145_attr_group);
++	if (err) {
++		dev_err(dev, "Can't create sysfs entries\n");
++		goto exit_free;
++	}
++
++	err = tja1145_check_devid(dev);
++	if (err) {
++		if (err == -ENODEV) {
++			dev_err(dev, "Can't find TJA1145 on SPI bus\n");
++			goto exit_free;
++		} else {
++			dev_err(dev, "Can't read device id\n");
++			goto exit_free;
++		}
++	}
++
++	err = tja1145_init(dev);
++	if (err) {
++		dev_err(dev, "Can't initialize TJA1145\n");
++		goto exit_free;
++	}
++
++	return 0;
++
++exit_free:
++	kfree(data);
++
++exit:
++	return err;
++}
++
++static int tja1145_remove(struct spi_device *client)
++{
++	struct tja1145_priv *data = dev_get_drvdata(&client->dev);
++
++	sysfs_remove_group(&data->dev->kobj, &tja1145_attr_group);
++	kfree(data);
++	return 0;
++}
++
++static const struct of_device_id tja1145_of_match[] = {
++	{ .compatible = "nxp,tja1145", },
++	{ },
++};
++
++MODULE_DEVICE_TABLE(of, tja1145_of_match);
++
++static const struct spi_device_id tja1145_id[] = {
++	{ "tja1145", 0 },
++	{ },
++};
++MODULE_DEVICE_TABLE(spi, tja1145_id);
++
++static struct spi_driver tja1145_spi_driver = {
++	.driver = {
++		.owner = THIS_MODULE,
++		.name = "tja1145",
++		.of_match_table = tja1145_of_match,
++	},
++	.id_table = tja1145_id,
++	.probe = tja1145_probe,
++	.remove = tja1145_remove,
++};
++
++module_spi_driver(tja1145_spi_driver);
++
++MODULE_AUTHOR("Robert Lehmann <robert.lehmann@sitec-systems.de>");
++MODULE_DESCRIPTION("TJA1145 CAN Transceiver SPI driver");
++MODULE_LICENSE("GPL");
+-- 
+1.9.1
+

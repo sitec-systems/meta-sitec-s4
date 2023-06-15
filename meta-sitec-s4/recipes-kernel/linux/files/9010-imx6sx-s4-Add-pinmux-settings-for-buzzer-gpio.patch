@@ -1,0 +1,38 @@
+From 6152eb17a3309d6d328844f49dbb342eaefa5404 Mon Sep 17 00:00:00 2001
+From: Robert Lehmann <robert.lehmann@sitec-systems.de>
+Date: Wed, 2 Nov 2016 09:32:34 +0000
+Subject: [PATCH] imx6sx-s4: Add pinmux settings for buzzer gpio
+
+Ticket #1569
+---
+ arch/arm/boot/dts/imx6sx-s4.dts | 8 ++++++++
+ 1 file changed, 8 insertions(+)
+
+diff --git a/arch/arm/boot/dts/imx6sx-s4.dts b/arch/arm/boot/dts/imx6sx-s4.dts
+index 03e38b2..cc85e5e 100644
+--- a/arch/arm/boot/dts/imx6sx-s4.dts
++++ b/arch/arm/boot/dts/imx6sx-s4.dts
+@@ -385,6 +385,7 @@
+ 			MX6SX_PAD_LCD1_DATA15__GPIO3_IO_16  0xc9		// ACC_IRQ
+ 			MX6SX_PAD_LCD1_DATA16__GPIO3_IO_17  0xc9		// CHRG_IRQ
+ 			MX6SX_PAD_LCD1_DATA22__GPIO3_IO_23  0xb001		// TEMP_IRQ
++			MX6SX_PAD_GPIO1_IO12__GPIO1_IO_12	0x110b0		// Buzzer
+             >;
+         };
+ 
+@@ -503,5 +504,12 @@
+             MX6SX_PAD_SD3_DATA3__USDHC3_DATA3	0x17069
+             >;
+         };
++
++		pinctrl_pwm3: pwm3grp-1 {
++			fsl,pins = <
++			>;
++		};
++
++
+     };
+ };
+-- 
+2.1.4
+

@@ -1,0 +1,309 @@
+From f63ddbb26e8aa87812ebcee0f95c14cefdbb7b0f Mon Sep 17 00:00:00 2001
+From: Robert Lehmann <robert.lehmann@sitec-systems.de>
+Date: Mon, 27 Jun 2016 10:57:27 +0200
+Subject: [PATCH 1002/1003] gpio-wakeup: Add driver for wakeup over gpio
+
+This driver registers a wakeup irq on the configured gpio which are used
+for waking up the whole device from standby. The configuration is done
+over the device tree.
+
+This is a port of the solution for the Ticket #1017
+
+Ticket #1239
+---
+ Documentation/devicetree/bindings/gpio-wakeup.txt |  13 ++
+ drivers/misc/Kconfig                              |   8 +
+ drivers/misc/Makefile                             |   1 +
+ drivers/misc/gpio-wakeup.c                        | 229 ++++++++++++++++++++++
+ 4 files changed, 251 insertions(+)
+ create mode 100644 Documentation/devicetree/bindings/gpio-wakeup.txt
+ create mode 100644 drivers/misc/gpio-wakeup.c
+
+diff --git a/Documentation/devicetree/bindings/gpio-wakeup.txt b/Documentation/devicetree/bindings/gpio-wakeup.txt
+new file mode 100644
+index 0000000..ee14100
+--- /dev/null
++++ b/Documentation/devicetree/bindings/gpio-wakeup.txt
+@@ -0,0 +1,13 @@
++Bindings for gpio-wakeup driver.
++
++Required:
++
++    compatible : "gpio-wakeup"
++    gpios : list of GPIO nodes that are enabled as wakeup sources
++
++example
++
++    wake_up {
++        compatible = "gpio-wakeup";
++        gpios = <&gpio0 3 0>;
++    };
+diff --git a/drivers/misc/Kconfig b/drivers/misc/Kconfig
+index fa77f81..8f1675b 100644
+--- a/drivers/misc/Kconfig
++++ b/drivers/misc/Kconfig
+@@ -526,6 +526,14 @@ config SRAM
+ 	  the genalloc API. It is supposed to be used for small on-chip SRAM
+ 	  areas found on many SoCs.
+ 
++config GPIO_WAKEUP
++	tristate "GPIO wakeup driver"
++	depends on PM_SLEEP && OF
++	help
++	  Say Y to build a driver that can wake up the system from diffrent GPIO
++	  lines. See Documentation/devicetree/bindings/gpio-wakeup.txt for
++	  binding details.
++
+ config VEXPRESS_SYSCFG
+ 	bool "Versatile Express System Configuration driver"
+ 	depends on VEXPRESS_CONFIG
+diff --git a/drivers/misc/Makefile b/drivers/misc/Makefile
+index 89a33288..4c8f839 100644
+--- a/drivers/misc/Makefile
++++ b/drivers/misc/Makefile
+@@ -55,6 +55,7 @@ obj-$(CONFIG_LATTICE_ECP3_CONFIG)	+= lattice-ecp3-config.o
+ obj-$(CONFIG_SRAM)		+= sram.o
+ obj-y				+= mic/
+ obj-$(CONFIG_GENWQE)		+= genwqe/
++obj-$(CONFIG_GPIO_WAKEUP) += gpio-wakeup.o
+ obj-$(CONFIG_ECHO)		+= echo/
+ obj-$(CONFIG_VEXPRESS_SYSCFG)	+= vexpress-syscfg.o
+ obj-$(CONFIG_CXL_BASE)		+= cxl/
+diff --git a/drivers/misc/gpio-wakeup.c b/drivers/misc/gpio-wakeup.c
+new file mode 100644
+index 0000000..13b9ec3
+--- /dev/null
++++ b/drivers/misc/gpio-wakeup.c
+@@ -0,0 +1,229 @@
++/*
++ * Driver for selecting GPIO lines as wakeup sources from sleep.
++ *
++ * Copyright (C) 2016 Robert Lehmann <robert.lehmann@sitec-systems.de>
++ *
++ * This program is free software; you can redistribute it and/or modify
++ * it under the terms of the GNU General Public License version 2 as
++ * published by the Free Software Foundation.
++ */
++
++#include <linux/module.h>
++#include <linux/init.h>
++#include <linux/interrupt.h>
++#include <linux/irq.h>
++#include <linux/pm.h>
++#include <linux/slab.h>
++#include <linux/platform_device.h>
++#include <linux/gpio.h>
++#include <linux/of_platform.h>
++#include <linux/of_gpio.h>
++#include <linux/atomic.h>
++
++struct gpio_wakeup_data {
++    unsigned int irq;
++    unsigned int gpio;
++    struct gpio_wakeup_data *next;
++};
++
++struct gpio_wakeup_priv {
++    unsigned int count;
++    struct device *dev;
++    atomic_t wake_count;
++    struct gpio_wakeup_data *root;
++};
++
++static irqreturn_t gpio_wakeup_isr(int irq, void *dev_id)
++{
++    return IRQ_HANDLED;
++}
++
++static int gpio_wakeup_alloc_data(struct gpio_wakeup_priv *p)
++{
++    int i, j;
++    struct gpio_wakeup_data *cur, *next;
++
++    p->root = devm_kzalloc(p->dev, sizeof(struct gpio_wakeup_data), GFP_KERNEL);
++    if (!p->root)
++        return -ENOMEM;
++    p->root->next = NULL;
++
++    cur = p->root;
++
++    for (i = 1; i < p->count; i++) {
++        cur->next = devm_kzalloc(p->dev, sizeof(struct gpio_wakeup_data), GFP_KERNEL);
++        if (!cur->next)
++            goto free_it;
++        cur = cur->next;
++        cur->next = NULL;
++    }
++
++    return i;
++
++free_it:
++    cur = p->root;
++    for (j = 0; i < j; j++) {
++        next = cur->next;
++        devm_kfree(p->dev, cur);
++        cur = next;
++    }
++
++    devm_kfree(p->dev, p->root);
++
++    return -ENOMEM;
++}
++
++static int gpio_wakeup_probe(struct platform_device *pdev)
++{
++    int ret, count, i=0;
++    struct gpio_wakeup_priv *p;
++    struct device *dev = &pdev->dev;
++    struct device_node *np = dev->of_node;
++    struct gpio_wakeup_data *cur, *next;
++
++    if (!np)
++        return -EINVAL;
++
++    count = of_gpio_count(np);
++    if (count == 0)
++        return -EINVAL;
++
++    dev_info(dev, "Request wakeup for %i gpios\n", count);
++
++    p = devm_kzalloc(dev, sizeof(struct gpio_wakeup_priv), GFP_KERNEL);
++    p->dev = dev;
++    p->count = count;
++
++    ret = gpio_wakeup_alloc_data(p);
++    if(ret != count) {
++        dev_err(dev, "Can't allocate memory for irqs\n");
++        goto free_it;
++    }
++
++    next = p->root;
++    while (next != NULL) {
++        cur = next;
++
++        cur->gpio = of_get_gpio(np, i);
++        if (cur->gpio < 0) {
++            dev_warn(dev, "Unable to get gpio #%i\n", i);
++            continue;
++        }
++
++        if (!gpio_is_valid(cur->gpio)) {
++            dev_warn(dev, "GPIO %i is no valid GPIO\n", cur->gpio);
++            continue;
++        }
++
++        cur->irq = gpio_to_irq(cur->gpio);
++        if (cur->irq < 0) {
++            dev_warn(dev, "Can't map GPIO %i to IRQ\n", cur->gpio);
++            continue;
++        }
++
++        ret = devm_gpio_request_one(dev, cur->gpio, GPIOF_IN, pdev->name);
++        if (ret < 0) {
++            dev_warn(dev, "Unable to request GPIO %i: %i\n", cur->gpio, ret);
++            continue;
++        }
++
++        ret = devm_request_irq(dev, cur->irq, gpio_wakeup_isr,
++            IRQF_TRIGGER_RISING | IRQF_TRIGGER_FALLING, pdev->name, NULL);
++        if (ret < 0) {
++            dev_warn(dev, "Unable to request IRQ %i\n", cur->irq);
++            continue;
++        }
++        dev_info(dev, "ISR for IRQ %i is requested\n", cur->irq);
++
++        next = cur->next;
++
++        disable_irq(cur->irq);
++
++        dev_info(dev, "Adding GPIO %i (IRQ %i) to wakeup sources\n", cur->gpio, cur->irq);
++
++        i++;
++    }
++
++    atomic_set(&p->wake_count, 0);
++    device_init_wakeup(dev, 1);
++    platform_set_drvdata(pdev, p);
++
++    return 0;
++
++free_it:
++    devm_kfree(dev, p);
++    return ret;
++}
++
++static int gpio_wakeup_suspend(struct device *d)
++{
++    struct gpio_wakeup_priv *p = dev_get_drvdata(d);
++    struct gpio_wakeup_data *cur = p->root;
++
++    while (cur != NULL) {
++        dev_dbg(d, "Enable GPIO %d as wakeup source\n", cur->gpio);
++        enable_irq(cur->irq);
++        enable_irq_wake(cur->irq);
++        dev_dbg(d, "Enable ISR for IRQ %d\n", cur->irq);
++        cur = cur->next;
++    }
++
++    return 0;
++}
++
++static int gpio_wakeup_resume(struct device *d)
++{
++    struct gpio_wakeup_priv *p = dev_get_drvdata(d);
++    struct gpio_wakeup_data *cur = p->root;
++
++    while (cur != NULL) {
++        dev_dbg(d, "Disable GPIO %d as wakeup source\n", cur->gpio);
++        disable_irq(cur->irq);
++        disable_irq_wake(cur->irq);
++        dev_dbg(d, "Disable ISR for IRQ %d\n", cur->irq);
++        cur = cur->next;
++    }
++
++    atomic_inc(&p->wake_count);
++
++    dev_dbg(d, "Resume for the %i time", atomic_read(&p->wake_count));
++
++    return 0;
++}
++
++static SIMPLE_DEV_PM_OPS(gpio_wakeup_pm_ops, gpio_wakeup_suspend, gpio_wakeup_resume);
++
++static struct of_device_id gpio_wakeup_of_match[] = {
++    { .compatible = "gpio-wakeup", },
++    { },
++};
++
++MODULE_DEVICE_TABLE(of, gpio_wakeup_of_match);
++
++static struct platform_driver gpio_wakeup_driver = {
++    .probe = gpio_wakeup_probe,
++    .driver = {
++        .name = "gpio-wakeup",
++        .owner = THIS_MODULE,
++        .pm = &gpio_wakeup_pm_ops,
++        .of_match_table = of_match_ptr(gpio_wakeup_of_match)
++    }
++};
++
++static int __init gpio_wakeup_init(void)
++{
++    return platform_driver_register(&gpio_wakeup_driver);
++}
++
++static void __exit gpio_wakeup_exit(void)
++{
++    return platform_driver_unregister(&gpio_wakeup_driver);
++}
++
++late_initcall(gpio_wakeup_init);
++module_exit(gpio_wakeup_exit);
++
++MODULE_LICENSE("GPL");
++MODULE_AUTHOR("Robert Lehmann <robert.lehmann@sitec-systems.de>");
++MODULE_DESCRIPTION("Driber to wake up the system from GPIOs");
++MODULE_ALIAS("platform:gpio_wakeup");
+-- 
+1.9.1
+

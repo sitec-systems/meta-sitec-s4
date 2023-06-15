@@ -1,0 +1,8 @@
+#!/bin/sh
+PPPCONN=/var/run/ppp.conn
+if [ ! -f $PPPCONN ]; then
+	echo "Connection established" > $PPPCONN
+	logger "Connection established"
+else
+	logger "Connection file already exists. Is a connection there?"
+fi

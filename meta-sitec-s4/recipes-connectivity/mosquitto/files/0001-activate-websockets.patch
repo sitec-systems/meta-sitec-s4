@@ -1,0 +1,25 @@
+From c8bd7696a2963b5630f81a975ccc9d1010e8dd52 Mon Sep 17 00:00:00 2001
+From: Robert Lehmann <robert.lehmann@sitec-systems.de>
+Date: Wed, 29 May 2019 14:27:49 +0200
+Subject: [PATCH] activate-websockets
+
+---
+ config.mk | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/config.mk b/config.mk
+index 9c9592a..fe321ee 100644
+--- a/config.mk
++++ b/config.mk
+@@ -65,7 +65,7 @@ WITH_SYSTEMD:=no
+ WITH_SRV:=no
+ 
+ # Build with websockets support on the broker.
+-WITH_WEBSOCKETS:=no
++WITH_WEBSOCKETS:=yes
+ 
+ # Use elliptic keys in broker
+ WITH_EC:=yes
+-- 
+2.7.4
+

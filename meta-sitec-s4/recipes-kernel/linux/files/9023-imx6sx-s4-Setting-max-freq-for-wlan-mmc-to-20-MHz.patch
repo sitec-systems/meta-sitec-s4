@@ -1,0 +1,35 @@
+From c2e637d496be9db042ed2d49b0b6194ce76e7b7d Mon Sep 17 00:00:00 2001
+From: Robert Lehmann <robert.lehmann@sitec-systems.de>
+Date: Wed, 21 Aug 2019 09:14:49 +0200
+Subject: [PATCH] imx6sx-s4: Setting max-freq for wlan mmc to 20 MHz
+
+Ticket #3124
+---
+ arch/arm/boot/dts/imx6sx-s4.dts | 4 +++-
+ 1 file changed, 3 insertions(+), 1 deletion(-)
+
+diff --git a/arch/arm/boot/dts/imx6sx-s4.dts b/arch/arm/boot/dts/imx6sx-s4.dts
+index 4e05856..21ca605 100644
+--- a/arch/arm/boot/dts/imx6sx-s4.dts
++++ b/arch/arm/boot/dts/imx6sx-s4.dts
+@@ -438,7 +438,6 @@
+ 	pinctrl-0 = <&pinctrl_usdhc2>;
+ 	bus-width = <4>;
+ 	non-removable;
+-	enable-sdio-wakeup;
+ 	status = "okay";
+ };
+ 
+@@ -446,6 +445,9 @@
+ 	pinctrl-names = "default";
+ 	pinctrl-0 = <&pinctrl_usdhc3>;
+ 	bus-width = <4>;
++    enable-sdio-wakeup;
++    no-1-8-v;
++    max-frequency = <20000000>;
+ 	status = "okay";
+ };
+ 
+-- 
+2.7.4
+

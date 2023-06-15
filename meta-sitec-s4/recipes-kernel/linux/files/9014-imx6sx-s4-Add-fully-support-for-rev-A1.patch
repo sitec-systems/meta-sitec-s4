@@ -1,0 +1,182 @@
+From 954bcca753da58e606ee3f16b8a4efdc7ae42822 Mon Sep 17 00:00:00 2001
+From: Robert Lehmann <robert.lehmann@sitec-systems.de>
+Date: Wed, 8 Mar 2017 15:58:29 +0000
+Subject: [PATCH] imx6sx-s4: Add fully support for rev A1
+
+The following things are changed:
+
+* usbotg1 is now in otg mode
+* change the meaning of i2c2 and i2c3 (intern and extern)
+* add init for rtc to i2c bus
+* Fix CAN2 init
+* Change the gpio pins for KLine control pins
+
+Ticket #1680
+Ticket #1417
+---
+ arch/arm/boot/dts/imx6sx-s4.dts | 67 +++++++++++++++++++++--------------------
+ 1 file changed, 34 insertions(+), 33 deletions(-)
+
+diff --git a/arch/arm/boot/dts/imx6sx-s4.dts b/arch/arm/boot/dts/imx6sx-s4.dts
+index 0b2936b..4243fa6 100644
+--- a/arch/arm/boot/dts/imx6sx-s4.dts
++++ b/arch/arm/boot/dts/imx6sx-s4.dts
+@@ -38,13 +38,12 @@
+ 		};
+ 	};
+ 
+-	clocks {
+-		clk20M: can_clock {
+-			compatible = "fixed-clock";
+-			#clock-cells = <0>;
+-			clock-frequency = <20000000>;
+-		};
++	clk20m: can_clock {
++		compatible = "fixed-clock";
++		#clock-cells = <0>;
++		clock-frequency = <20000000>;
+ 	};
++	
+ };
+ 
+ &cpu0 {
+@@ -97,7 +96,10 @@
+ };
+ 
+ &usbotg1 {
+-	dr_mode = "peripheral";
++	dr_mode = "otg";
++	srp-disable;
++	hnp-disable;
++	adp-disable;
+ 	status = "okay";
+ };
+ 
+@@ -122,17 +124,17 @@
+ 	status = "okay";
+ };
+ 
+-&i2c2 {
++&i2c3 {
+ 	clock-frequency = <100000>;
+ 	pinctrl-names = "default";
+-	pinctrl-0 = <&pinctrl_i2c2>;
++	pinctrl-0 = <&pinctrl_i2c3>;
+ 	status = "okay";
+ };
+ 
+-&i2c3 {
++&i2c2 {
+ 	clock-frequency = <100000>;
+ 	pinctrl-names = "default";
+-	pinctrl-0 = <&pinctrl_i2c3>;
++	pinctrl-0 = <&pinctrl_i2c2>;
+ 	status = "okay";
+ 
+ 	led1: lp5562@30 {
+@@ -195,6 +197,12 @@
+ 		label = "temp";
+ 	};
+ 
++	rtc: rv4126@68 {
++		compatible = "st,m41t80";
++		reg = <0x68>;
++		label = "rtc";
++	};
++
+ 	expand1: pca9535@20 {
+ 		compatible = "nxp,pca9535";
+ 		gpio-controller;
+@@ -321,11 +329,11 @@
+ 
+ 	can2: spi@1 {
+ 		compatible = "microchip,mcp2515";
+-		spi-max-frequency = <1000000>;
++		spi-max-frequency = <10000000>;
+ 		reg = <1>;
+-		clocks = <&clk20M>;
++		clocks = <&clk20m>;
+ 		interrupt-parent = <&gpio1>;
+-		interrupts = <3 GPIO_ACTIVE_LOW>;
++		interrupts = <3 IRQ_TYPE_EDGE_FALLING>;
+ 	};
+ 
+ 	msp430: spi@3 {
+@@ -378,7 +386,7 @@
+ 			MX6SX_PAD_GPIO1_IO02__GPIO1_IO_2    0xc9		// FC_IRQ
+ 			MX6SX_PAD_GPIO1_IO00__GPIO1_IO_0    0xc9		// PWR_ALERT
+ 			MX6SX_PAD_GPIO1_IO01__GPIO1_IO_1    0xc9		// I2C_IRQ
+-			MX6SX_PAD_GPIO1_IO03__GPIO1_IO_3    0xc9		// CAN2_WAKE
++			MX6SX_PAD_GPIO1_IO03__GPIO1_IO_3    0xb041		// CAN2_WAKE
+ 			MX6SX_PAD_KEY_ROW0__GPIO2_IO_15     0xc9		// GSM_RI
+ 			MX6SX_PAD_KEY_COL0__GPIO2_IO_10     0xc9		// LIN_E
+ 			MX6SX_PAD_KEY_COL2__GPIO2_IO_12     0xc9		// DI_K30
+@@ -394,8 +402,8 @@
+ 			MX6SX_PAD_LCD1_DATA09__GPIO3_IO_10	0xc9		// HOST2WL
+ 			MX6SX_PAD_GPIO1_IO13__GPIO1_IO_13   0xc9		// OTG_DRVBUS
+ 			MX6SX_PAD_GPIO1_IO11__GPIO1_IO_11   0xc9		// SIM_SEL
+-			MX6SX_PAD_SD3_DATA7__GPIO7_IO_9		0xc9		// K_L_PU_E
+-			MX6SX_PAD_SD3_DATA6__GPIO7_IO_8		0xc9		// K_L_1/2
++			MX6SX_PAD_QSPI1B_SS0_B__GPIO4_IO_30	0xc9		// K_L_PU_E
++			MX6SX_PAD_QSPI1B_DATA0__GPIO4_IO_24	0xc9		// K_L_1/2
+ 			MX6SX_PAD_GPIO1_IO12__GPIO1_IO_12	0x110b0		// Buzzer
+ 			>;
+ 		};
+@@ -420,13 +428,6 @@
+ 			>;
+ 		};
+ 
+-		pinctrl_i2c3: i2c3grp {
+-			fsl,pins = <
+-			MX6SX_PAD_KEY_ROW4__I2C3_SDA 0x4001b8b1
+-			MX6SX_PAD_KEY_COL4__I2C3_SCL 0x4001b8b1
+-			>;
+-		};
+-
+ 		pinctrl_i2c4: i2c4grp {
+ 			fsl,pins = <
+ 			MX6SX_PAD_USB_H_DATA__I2C4_SDA 0x4001b8b1
+@@ -454,11 +455,11 @@
+ 			fsl,pins = <
+ 			MX6SX_PAD_ENET1_MDIO__ENET2_MDIO        0xa0b1
+ 			MX6SX_PAD_ENET1_MDC__ENET2_MDC          0xa0b1
+-			MX6SX_PAD_ENET2_TX_CLK__ENET2_REF_CLK2   0x3081
++			MX6SX_PAD_ENET2_TX_CLK__ENET2_REF_CLK2  0x3081
+ 			MX6SX_PAD_RGMII2_TD0__ENET2_TX_DATA_0   0xa0b1
+ 			MX6SX_PAD_RGMII2_TD1__ENET2_TX_DATA_1   0xa0b1
+ 			MX6SX_PAD_RGMII2_TX_CTL__ENET2_TX_EN    0xa0b1
+-			MX6SX_PAD_RGMII2_RXC__ENET2_RX_ER      0x3081
++			MX6SX_PAD_RGMII2_RXC__ENET2_RX_ER		0x3081
+ 			MX6SX_PAD_RGMII2_RD0__ENET2_RX_DATA_0   0x3081
+ 			MX6SX_PAD_RGMII2_RD1__ENET2_RX_DATA_1   0x3081
+ 			MX6SX_PAD_RGMII2_RX_CTL__ENET2_RX_EN    0x3081
+@@ -472,6 +473,13 @@
+ 			>;
+ 		};
+ 
++		pinctrl_i2c3: i2c3grp {
++			fsl,pins = <
++			MX6SX_PAD_KEY_ROW4__I2C3_SDA 0x4001b8b1
++			MX6SX_PAD_KEY_COL4__I2C3_SCL 0x4001b8b1
++			>;
++		};
++
+ 		pinctrl_uart1: uart1grp {
+ 			fsl,pins = <
+ 			MX6SX_PAD_GPIO1_IO04__UART1_TX		0x1b0b1
+@@ -515,12 +523,5 @@
+ 			MX6SX_PAD_SD3_DATA3__USDHC3_DATA3	0x17069
+ 			>;
+ 		};
+-
+-		pinctrl_pwm3: pwm3grp-1 {
+-			fsl,pins = <
+-			>;
+-		};
+-
+-
+ 	};
+ };
+-- 
+2.1.4
+

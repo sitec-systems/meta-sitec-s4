@@ -1,0 +1,26 @@
+From d855bc07131ae2de6a18e8525b51e183f479ecfb Mon Sep 17 00:00:00 2001
+From: Robert Lehmann <robert.lehmann@sitec-systems.de>
+Date: Thu, 16 Nov 2017 09:29:30 +0100
+Subject: [PATCH] score: Add support for macronix nor flashes
+
+Ticket #2133
+---
+ include/configs/score.h | 2 ++
+ 1 file changed, 2 insertions(+)
+
+diff --git a/include/configs/score.h b/include/configs/score.h
+index 2b5e7bb..c476d56 100644
+--- a/include/configs/score.h
++++ b/include/configs/score.h
+@@ -277,6 +277,8 @@
+ #define CONFIG_CMD_SF
+ #define CONFIG_SPI_FLASH
+ #define CONFIG_SPI_FLASH_STMICRO
++#define CONFIG_SPI_FLASH_MACRONIX
++#define CONFIG_SPI
+ #define CONFIG_MXC_SPI
+ #define CONFIG_SF_DEFAULT_BUS   2
+ #define CONFIG_SF_DEFAULT_SPEED 20000000
+-- 
+2.7.4
+

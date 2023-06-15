@@ -1,0 +1,52 @@
+From 65606aae39dfaac39cf9a83ef301fd2ef59ef570 Mon Sep 17 00:00:00 2001
+From: Robert Lehmann <robert.lehmann@sitec-systems.de>
+Date: Wed, 8 Mar 2017 16:08:07 +0000
+Subject: [PATCH] mach-imx6sx: Change IO State add init of the kernel
+
+Change the state of some GPIOs at the initialisation of the kernel.
+
+Ticket #1668
+---
+ arch/arm/mach-imx/mach-imx6sx.c | 11 ++++++-----
+ 1 file changed, 6 insertions(+), 5 deletions(-)
+
+diff --git a/arch/arm/mach-imx/mach-imx6sx.c b/arch/arm/mach-imx/mach-imx6sx.c
+index 66c8234..88e71b6 100644
+--- a/arch/arm/mach-imx/mach-imx6sx.c
++++ b/arch/arm/mach-imx/mach-imx6sx.c
+@@ -154,8 +154,8 @@ static void imx6sx_gpio_setup_score(void)
+ #define S4_OTG_DRVBUS IMX_GPIO_NR(1, 13)
+ #define S4_SIM_SEL IMX_GPIO_NR(1, 11)
+ #define S4_KILL_4P IMX_GPIO_NR(3, 18)
+-#define S4_K_L_PU_E IMX_GPIO_NR(7, 9)
+-#define S4_K_L_HALF IMX_GPIO_NR(7, 8)
++#define S4_K_L_PU_E IMX_GPIO_NR(4, 30)
++#define S4_K_L_HALF IMX_GPIO_NR(4, 24)
+ #define S4_BUZZER IMX_GPIO_NR(1, 12)
+ static void imx6sx_gpio_setup_s4_native(void)
+ {
+@@ -179,8 +179,8 @@ static void imx6sx_gpio_setup_s4_native(void)
+ 	gpio_request_export(S4_SIM_SEL, GPIOF_OUT_INIT_LOW, SIM_SEL);
+ 	gpio_request_export(S4_K_L_PU_E, GPIOF_OUT_INIT_LOW, K_L_PU_E);
+ 	gpio_request_export(S4_K_L_HALF, GPIOF_OUT_INIT_LOW, K_L_PU_HALF);
+-	gpio_request_export(S4_KILL_4P, GPIOF_OUT_INIT_LOW, KILL_4P);
+ 	gpio_request_export(S4_BUZZER, GPIOF_OUT_INIT_LOW, BUZZER);
++	gpio_request_export(S4_OTG_DRVBUS, GPIOF_OUT_INIT_LOW, OTG_DRVBUS);
+ 	pr_info("S4: Finished GPIO native init\n");
+ }
+ /*
+@@ -224,8 +224,9 @@ static void imx6sx_gpio_setup_s4_expander(void)
+ 	pr_info("S4: Doing GPIO expander init\n");
+ 	gpio_request_export(S4_WIFI_PWR_E, GPIOF_OUT_INIT_HIGH, WIFI_PWR_E);
+ 	gpio_request_export(S4_LAN_PWR_E, GPIOF_OUT_INIT_HIGH, LAN_PWR_E);
+-	gpio_request_export(S4_5P_EXT_E, GPIOF_OUT_INIT_LOW, V5P_EXT_E);
+-	gpio_request_export(S4_5P_ISO_E, GPIOF_OUT_INIT_LOW, V5P_ISO_E);
++	// TODO: change default state of Voltage
++	gpio_request_export(S4_5P_EXT_E, GPIOF_OUT_INIT_HIGH, V5P_EXT_E);
++	gpio_request_export(S4_5P_ISO_E, GPIOF_OUT_INIT_HIGH, V5P_ISO_E);
+ 	gpio_request_export(S4_CAN1_TERM, GPIOF_OUT_INIT_LOW, CAN1_TERM);
+ 	gpio_request_export(S4_CAN2_TERM, GPIOF_OUT_INIT_LOW, CAN2_TERM);
+ 	gpio_request_one(S4_CAN2_E, GPIOF_OUT_INIT_HIGH, CAN2_EN);
+-- 
+2.1.4
+

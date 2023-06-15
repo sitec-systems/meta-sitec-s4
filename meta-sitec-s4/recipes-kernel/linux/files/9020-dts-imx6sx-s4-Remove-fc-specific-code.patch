@@ -1,0 +1,272 @@
+From 4e24f1d2c06010ea36cedc536ff94e16b1c0f027 Mon Sep 17 00:00:00 2001
+From: Robert Lehmann <robert.lehmann@sitec-systems.de>
+Date: Wed, 12 Sep 2018 13:20:58 +0200
+Subject: [PATCH] dts:imx6sx-s4: Remove fc specific code
+
+Remove fc board specific code from the common s4 init routines.
+
+Ticket #2538
+---
+ arch/arm/boot/dts/imx6sx-s4.dts | 225 ++++++++++++++++++----------------------
+ 1 file changed, 103 insertions(+), 122 deletions(-)
+
+diff --git a/arch/arm/boot/dts/imx6sx-s4.dts b/arch/arm/boot/dts/imx6sx-s4.dts
+index 44eecc2..35af1a8 100644
+--- a/arch/arm/boot/dts/imx6sx-s4.dts
++++ b/arch/arm/boot/dts/imx6sx-s4.dts
+@@ -147,91 +147,84 @@
+ 	pinctrl-0 = <&pinctrl_i2c2>;
+ 	status = "okay";
+ 
+-	led1: lp5562@30 {
+-		compatible = "ti,lp5562";
+-		label = "LED1";
+-		reg = <0x30>;
+-		clock-mode = /bits/8 <2>;
+-
+-		chan0 {
+-			chan-name = "R1";
+-			led-cur = /bits/ 8 <0x20>;
+-			max-cur = /bits/ 8 <0x60>;
+-			linux,default-trigger = "none";
+-		};
+-		chan1 {
+-			chan-name = "G1";
+-			led-cur = /bits/ 8 <0x20>;
+-			max-cur = /bits/ 8 <0x60>;
+-			linux,default-trigger = "none";
+-		};
+-
+-		chan2 {
+-			chan-name = "B1";
+-			led-cur = /bits/ 8 <0x20>;
+-			max-cur = /bits/ 8 <0x60>;
+-			linux,default-trigger = "heartbeat";
+-		};
+-	};
+-
+-	led2: lp5562@32 {
+-		compatible = "ti,lp5562";
+-		label = "LED2";
+-		reg = <0x32>;
+-		clock-mode = /bits/8 <2>;
+-
+-		chan0 {
+-			chan-name = "R2";
+-			led-cur = /bits/ 8 <0x20>;
+-			max-cur = /bits/ 8 <0x60>;
+-			linux,default-trigger = "none";
+-		};
+-		chan1 {
+-			chan-name = "G2";
+-			led-cur = /bits/ 8 <0x20>;
+-			max-cur = /bits/ 8 <0x60>;
+-			linux,default-trigger = "none";
+-		};
+-
+-		chan2 {
+-			chan-name = "B2";
+-			led-cur = /bits/ 8 <0x20>;
+-			max-cur = /bits/ 8 <0x60>;
+-			linux,default-trigger = "none";
+-		};
+-	};
+-
+-	temp: lm75@48 {
+-		compatible = "national,adt75";
+-		reg = <0x48>;
+-		label = "temp";
+-	};
+-
+-	rtc: rv4126@68 {
+-		compatible = "st,m41t80";
+-		reg = <0x68>;
+-		label = "rtc";
+-	};
+-
+-	expand1: pca9535@20 {
+-		compatible = "nxp,pca9535";
+-		gpio-controller;
+-		#gpio-cells = <1>;
+-		reg = <0x20>;
+-	};
+-
+-	onew: ds2482@18 {
+-		compatible = "ds2482";
+-		reg = <0x18>;
+-		label = "1w";
+-	};
+-
+-	expand2: pca9534@21 {
+-		compatible = "pca9534";
+-		gpio-controller;
+-		reg = <0x21>;
+-		status = "okay";
+-	};
++    led1: lp5562@30 {
++        compatible = "ti,lp5562";
++        label = "LED1";
++        reg = <0x30>;
++        clock-mode = /bits/8 <2>;
++
++        chan0 {
++            chan-name = "R1";
++            led-cur = /bits/ 8 <0x20>;
++            max-cur = /bits/ 8 <0x60>;
++            linux,default-trigger = "none";
++        };
++        chan1 {
++            chan-name = "G1";
++            led-cur = /bits/ 8 <0x20>;
++            max-cur = /bits/ 8 <0x60>;
++            linux,default-trigger = "none";
++        };
++
++        chan2 {
++            chan-name = "B1";
++            led-cur = /bits/ 8 <0x20>;
++            max-cur = /bits/ 8 <0x60>;
++            linux,default-trigger = "heartbeat";
++        };
++    };
++
++    led2: lp5562@32 {
++        compatible = "ti,lp5562";
++        label = "LED2";
++        reg = <0x32>;
++        clock-mode = /bits/8 <2>;
++
++        chan0 {
++            chan-name = "R2";
++            led-cur = /bits/ 8 <0x20>;
++            max-cur = /bits/ 8 <0x60>;
++            linux,default-trigger = "none";
++        };
++        chan1 {
++            chan-name = "G2";
++            led-cur = /bits/ 8 <0x20>;
++            max-cur = /bits/ 8 <0x60>;
++            linux,default-trigger = "none";
++        };
++
++        chan2 {
++            chan-name = "B2";
++            led-cur = /bits/ 8 <0x20>;
++            max-cur = /bits/ 8 <0x60>;
++            linux,default-trigger = "none";
++        };
++    };
++
++    temp: lm75@48 {
++        compatible = "national,adt75";
++        reg = <0x48>;
++        label = "temp";
++    };
++
++    rtc: rv4126@68 {
++        compatible = "st,m41t80";
++        reg = <0x68>;
++        label = "rtc";
++    };
++
++    expand1: pca9535@20 {
++        compatible = "nxp,pca9535";
++        gpio-controller;
++        #gpio-cells = <1>;
++        reg = <0x20>;
++    };
++
++    onew: ds2482@18 {
++        compatible = "ds2482";
++        reg = <0x18>;
++        label = "1w";
++    };
+ 
+ 	/* Driver for PAC1710 0x18 */
+ 	/* Driver for BQ24151 0x6b */
+@@ -367,31 +360,31 @@
+ 	};
+ };
+ 
+-&ecspi5 {
+-	pinctrl-names = "default";
+-	pinctrl-0 = <&pinctrl_ecspi5>;
+-	fsl,spi-num-chipselects = <4>;
+-	cs-gpios = <&gpio4 28 0>,
+-	<&gpio4 18 0>,
+-	<&gpio4 19 0>,
+-	<&gpio4 27 0>;
+-	status = "okay";
+-
+-	adc@0 {
+-		compatible = "ti,ads8688";
+-		reg = <0>;
+-		spi-max-frequency = <1000000>;
+-	};
+-
+-	gpio@1 {
+-		compatible = "microchip,mcp23s08";
+-		reg = <1>;
+-		gpio-controller;
+-        #gpio-cells = <2>;
+-        spi-present-mask = <0x01>;
+-        spi-max-frequency = <1000000>;
+-	};
+-};
++/*&ecspi5 {*/
++	/*pinctrl-names = "default";*/
++	/*pinctrl-0 = <&pinctrl_ecspi5>;*/
++	/*fsl,spi-num-chipselects = <4>;*/
++	/*cs-gpios = <&gpio4 28 0>,*/
++	/*<&gpio4 18 0>,*/
++	/*<&gpio4 19 0>,*/
++	/*<&gpio4 27 0>;*/
++	/*status = "okay";*/
++
++	/*adc@0 {*/
++		/*compatible = "ti,ads8688";*/
++		/*reg = <0>;*/
++		/*spi-max-frequency = <1000000>;*/
++	/*};*/
++
++	/*gpio@1 {*/
++		/*compatible = "microchip,mcp23s08";*/
++		/*reg = <1>;*/
++		/*gpio-controller;*/
++        /*#gpio-cells = <2>;*/
++        /*spi-present-mask = <0x01>;*/
++        /*spi-max-frequency = <1000000>;*/
++	/*};*/
++/*};*/
+ 
+ &gpmi {
+ 	pinctrl-names = "default";
+@@ -430,10 +423,6 @@
+ 			MX6SX_PAD_SD4_CMD__GPIO6_IO_13		0x80000000	// SPI3 SS1
+ 			MX6SX_PAD_SD4_CLK__GPIO6_IO_12		0x80000000	// SPI3 SS2
+ 			MX6SX_PAD_SD4_DATA0__GPIO6_IO_14	0x80000000	// SPI3 SS3
+-			MX6SX_PAD_QSPI1B_DQS__GPIO4_IO_28	0x80000000	// SPI5 SS0
+-			MX6SX_PAD_QSPI1A_DATA2__GPIO4_IO_18	0x80000000  // SPI5 SS1
+-			MX6SX_PAD_QSPI1A_DATA3__GPIO4_IO_19	0x80000000	// SPI5 SS2
+-			MX6SX_PAD_QSPI1B_DATA3__GPIO4_IO_27 0x80000000	// SPI5 SS3
+ 			MX6SX_PAD_GPIO1_IO08__GPIO1_IO_8    0xc9		// TEMP_IRQ
+ 			MX6SX_PAD_GPIO1_IO09__GPIO1_IO_9    0xc9		// ACC_IRQ
+ 			MX6SX_PAD_GPIO1_IO02__GPIO1_IO_2    0xc9		// FC_IRQ
+@@ -496,14 +485,6 @@
+ 			>;
+ 		};
+ 
+-		pinctrl_ecspi5: ecspi5grp {
+-			fsl,pins = <
+-			MX6SX_PAD_QSPI1B_SS1_B__ECSPI5_SCLK	0x100b1
+-			MX6SX_PAD_QSPI1A_DQS__ECSPI5_MOSI 	0x100b1
+-			MX6SX_PAD_QSPI1A_SS1_B__ECSPI5_MISO	0x100b1
+-			>;
+-		};
+-
+ 		pinctrl_usb_otg_id: usbotgidgrp {
+ 			fsl,pins = <
+ 				MX6SX_PAD_GPIO1_IO10__ANATOP_OTG1_ID	0x17059
+-- 
+2.7.4
+

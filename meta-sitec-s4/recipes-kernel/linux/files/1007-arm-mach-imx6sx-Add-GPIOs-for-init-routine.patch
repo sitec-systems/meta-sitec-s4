@@ -1,0 +1,118 @@
+From 44b32b633f5edc44657b82da927ba00d03476092 Mon Sep 17 00:00:00 2001
+From: Robert Lehmann <robert.lehmann@sitec-systems.de>
+Date: Thu, 25 Aug 2016 09:39:09 +0200
+Subject: [PATCH] arm: mach-imx6sx: Add GPIOs for init routine
+
+Add GPIOs to board initialisation. These IOs are already initialized
+with a value and exported to the userspace via the sysfs.
+Also add the labels for the GPIOs into the corresponding header file.
+
+Ticket #1370
+---
+ arch/arm/mach-imx/gpio_label.h  | 24 ++++++++++++++++++---
+ arch/arm/mach-imx/mach-imx6sx.c | 47 +++++++++++++++++++++++++++++++++++++++++
+ 2 files changed, 68 insertions(+), 3 deletions(-)
+
+diff --git a/arch/arm/mach-imx/gpio_label.h b/arch/arm/mach-imx/gpio_label.h
+index 87e7361..8713a89 100644
+--- a/arch/arm/mach-imx/gpio_label.h
++++ b/arch/arm/mach-imx/gpio_label.h
+@@ -1,12 +1,30 @@
+ #ifndef __GPIO_LABEL_H__
+ #define __GPIO_LABEL_H__
+ 
+-// CAN enable pins. These pins can be high active of low active
+ #define CAN1_EN "can1_en"
+ #define CAN2_EN "can2_en"
+-
+-// CAN termination control pins. These pins can be high active or low active
++#define CAN1_STBY "can1_stby"
++#define CAN2_STBY "can2_stby"
+ #define CAN1_TERM "can1_term"
+ #define CAN2_TERM "can2_term"
+ 
++#define V5P_E "5p_e"
++#define V5P_GOOD "5p_good"
++#define WIFI_PWR_E	"wifi_pwr_e"
++#define GSM_PWR_E	"gsm_pwr_e"
++#define SIM_SEL		"sim_sel"
++#define GNSS_PWR_E	"gnss_pwr_e"
++
++#define DI2			"di2"
++#define DI3			"di3"
++#define DI_K15		"di_k15"
++#define DI_K30		"di_k30"
++
++#define DO1_OUT	"do1_out"
++#define DO1_STATE	"do1_state"
++#define DO2_OUT	"do2_out"
++#define DO2_STATE	"do2_state"
++#define DO3_OUT	"do3_out"
++#define DO3_STATE	"do3_state"
++
+ #endif // __GPIO_LABEL_H__
+diff --git a/arch/arm/mach-imx/mach-imx6sx.c b/arch/arm/mach-imx/mach-imx6sx.c
+index 0fe7023..a6dd627 100644
+--- a/arch/arm/mach-imx/mach-imx6sx.c
++++ b/arch/arm/mach-imx/mach-imx6sx.c
+@@ -103,10 +103,57 @@ static void imx6sx_gpio_setup_score(void)
+     gpio_request_export(SCORE_CAN2_TERM, GPIOF_OUT_INIT_LOW, CAN2_TERM);
+ }
+ 
++#define S4_WIFI_PWR_E IMX_GPIO_NR(3, 10)
++#define S4_GSM_PWR_E IMX_GPIO_NR(4, 24)
++#define S4_SIM_SEL IMX_GPIO_NR(4, 25)
++#define S4_GNSS_PWR_E 502
++#define S4_DI2 IMX_GPIO_NR(3, 0)
++#define S4_DI3 IMX_GPIO_NR(3, 8)
++#define S4_DI_K15 IMX_GPIO_NR(3, 25)
++#define S4_DI_K30 IMX_GPIO_NR(3, 18)
++#define S4_DO1_OUT 496
++#define S4_DO1_STATE 497
++#define S4_DO2_OUT 499
++#define S4_DO2_STATE 498
++#define S4_DO3_OUT 501
++#define S4_DO3_STATE 500
++#define S4_CAN1_TERM 505
++#define S4_CAN1_STBY 504
++#define S4_5P_E 510
++#define S4_5P_GOOD 511
++static void imx6sx_gpio_setup_s4(void)
++{
++	/* Control GPIOs */
++	gpio_request_export(S4_WIFI_PWR_E, GPIOF_OUT_INIT_HIGH, WIFI_PWR_E);
++	gpio_request_export(S4_GSM_PWR_E, GPIOF_OUT_INIT_LOW, GSM_PWR_E);
++	gpio_request_export(S4_SIM_SEL, GPIOF_OUT_INIT_LOW, SIM_SEL);
++	gpio_request_export(S4_GNSS_PWR_E, GPIOF_OUT_INIT_LOW, GNSS_PWR_E);
++	gpio_request_export(S4_CAN1_TERM, GPIOF_OUT_INIT_LOW, CAN1_TERM);
++	gpio_request_export(S4_CAN1_STBY, GPIOF_OUT_INIT_LOW, CAN1_STBY);
++	gpio_request_export(S4_5P_E, GPIOF_OUT_INIT_LOW, V5P_E);
++	gpio_request_export(S4_5P_GOOD, GPIOF_IN, V5P_GOOD);
++
++	/* Digital Inputs */
++	gpio_request_export(S4_DI2, GPIOF_IN, DI2);
++	gpio_request_export(S4_DI3, GPIOF_IN, DI3);
++	gpio_request_export(S4_DI_K15, GPIOF_IN, DI_K15);
++	gpio_request_export(S4_DI_K30, GPIOF_IN, DI_K30);
++
++	/* Digital Outputs */
++	gpio_request_export(S4_DO1_OUT, GPIOF_OUT_INIT_LOW, DO1_OUT);
++	gpio_request_export(S4_DO1_STATE, GPIOF_IN, DO1_STATE);
++	gpio_request_export(S4_DO2_OUT, GPIOF_OUT_INIT_LOW, DO2_OUT);
++	gpio_request_export(S4_DO2_STATE, GPIOF_IN, DO2_STATE);
++	gpio_request_export(S4_DO3_OUT, GPIOF_OUT_INIT_LOW, DO3_OUT);
++	gpio_request_export(S4_DO3_STATE, GPIOF_IN, DO3_STATE);
++}
++
+ static void imx6sx_gpio_init(void)
+ {
+     if (of_machine_is_compatible("fsl,imx6sx-score")) {
+         imx6sx_gpio_setup_score();
++	} else if (of_machine_is_compatible("fsl,imx6sx-s4")) {
++		imx6sx_gpio_setup_s4();
+ 	}
+ }
+ 
+-- 
+2.7.4
+

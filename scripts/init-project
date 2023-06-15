@@ -1,0 +1,25 @@
+#!/bin/sh
+
+clone_project() {
+    url="$1"
+    path="$2"
+    revision="$3"
+
+    cwd="$(pwd)"
+
+    if [ -d "$path" ]; then
+        rm -rf "$path"
+    fi
+
+    echo "== Initialize $path =="
+
+    git clone "$url" "$path"
+    cd "$path"
+    git config --local --add --bool advice.detachedHead false
+    git checkout "$revision"
+    cd "$cwd"
+}
+
+clone_project https://git.openembedded.org/meta-openembedded meta-openembedded 247b1267b
+clone_project https://github.com/freescale/meta-fsl-arm meta-fsl-arm a3a91dc
+clone_project https://git.yoctoproject.org/git/poky poky 6c1c01392d

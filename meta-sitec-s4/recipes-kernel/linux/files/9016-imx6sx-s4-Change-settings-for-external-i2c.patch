@@ -1,0 +1,43 @@
+From 29ab4417f254cc79ee4f9601e09ef42991aa8bb5 Mon Sep 17 00:00:00 2001
+From: Robert Lehmann <robert.lehmann@sitec-systems.de>
+Date: Tue, 23 May 2017 14:59:44 +0200
+Subject: [PATCH] imx6sx-s4: Change settings for external i2c
+
+Change the pinmuxing configuration for i2c3-sda and i2c3-scl
+pins. With these new settings the signal form is correct.
+
+Although change the clock frequency, that the device generates a scl
+with 100 kHz.
+
+Ticket #1885
+---
+ arch/arm/boot/dts/imx6sx-s4.dts | 6 +++---
+ 1 file changed, 3 insertions(+), 3 deletions(-)
+
+diff --git a/arch/arm/boot/dts/imx6sx-s4.dts b/arch/arm/boot/dts/imx6sx-s4.dts
+index 04c4b73..9e8106f 100644
+--- a/arch/arm/boot/dts/imx6sx-s4.dts
++++ b/arch/arm/boot/dts/imx6sx-s4.dts
+@@ -126,7 +126,7 @@
+ };
+ 
+ &i2c3 {
+-	clock-frequency = <100000>;
++	clock-frequency = <108000>;
+ 	pinctrl-names = "default";
+ 	pinctrl-0 = <&pinctrl_i2c3>;
+ 	status = "okay";
+@@ -481,8 +481,8 @@
+ 
+ 		pinctrl_i2c3: i2c3grp {
+ 			fsl,pins = <
+-			MX6SX_PAD_KEY_ROW4__I2C3_SDA 0x4001b8b1
+-			MX6SX_PAD_KEY_COL4__I2C3_SCL 0x4001b8b1
++			MX6SX_PAD_KEY_ROW4__I2C3_SDA 0x4001a0f9
++			MX6SX_PAD_KEY_COL4__I2C3_SCL 0x4001a0f9
+ 			>;
+ 		};
+ 
+-- 
+2.1.4
+

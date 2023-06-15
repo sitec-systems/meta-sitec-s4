@@ -1,0 +1,595 @@
+From 2433091e4407f32eaad923947a937a61eba651b1 Mon Sep 17 00:00:00 2001
+From: Robert Lehmann <robert.lehmann@sitec-systems.de>
+Date: Wed, 29 Jun 2016 11:55:22 +0200
+Subject: [PATCH] dts: imx6sx-s4: Initial commit
+
+Initial commit of dts for S4.
+
+Ticket #1247
+---
+ arch/arm/boot/dts/imx6sx-s4.dts | 573 ++++++++++++++++++++++++++++++++++++++++
+ 1 file changed, 573 insertions(+)
+ create mode 100644 arch/arm/boot/dts/imx6sx-s4.dts
+
+diff --git a/arch/arm/boot/dts/imx6sx-s4.dts b/arch/arm/boot/dts/imx6sx-s4.dts
+new file mode 100644
+index 0000000..7c1aca6
+--- /dev/null
++++ b/arch/arm/boot/dts/imx6sx-s4.dts
+@@ -0,0 +1,573 @@
++/*
++* Copyright (C) 2014-2015 Freescale Semiconductor, Inc.
++* Copyright (C) 2015, 2016 Robert Lehmann <robert.lehmann@sitec-systems.de>
++*
++* This program is free software; you can redistribute it and/or modify
++* it under the terms of the GNU General Public License version 2 as
++* published by the Free Software Foundation.
++*/
++
++/dts-v1/;
++
++#include <dt-bindings/input/input.h>
++#include <dt-bindings/gpio/gpio.h>
++#include "imx6sx-score.dtsi"
++
++/ {
++    model = "sitec systems S4";
++    compatible = "fsl,imx6sx-s4", "fsl,imx6sx";
++
++    chosen {
++        stdout-path = &uart1;
++    };
++
++    memory {
++        reg = <0x80000000 0x20000000>;
++    };
++
++    leds {
++        compatible = "gpio-leds";
++        alive {
++            label = "Alive";
++            gpios = <&gpio3 19 GPIO_ACTIVE_HIGH>;
++            linux,default-trigger = "heartbeat";
++        };
++        led {
++            label = "Red_led";
++            gpios = <&gpio3 20 GPIO_ACTIVE_HIGH>;
++        };
++    };
++
++};
++
++&cpu0 {
++    operating-points = <
++    /* kHz    uV */
++    996000  1250000
++    792000  1175000
++    396000  1175000
++    198000	1175000
++    >;
++    fsl,soc-operating-points = <
++    /* ARM kHz      SOC uV */
++    996000	1250000
++    792000	1175000
++    396000	1175000
++    198000	1175000
++    >;
++    arm-supply = <&reg_arm>;
++    soc-supply = <&reg_soc>;
++};
++
++&gpc {
++    /* use ldo-bypass, u-boot will check it and configure */
++    fsl,ldo-bypass = <0>;
++    fsl,wdog-reset = <1>; /* watchdog select of reset source */
++};
++
++&uart1 {
++    pinctrl-names = "default";
++    pinctrl-0 = <&pinctrl_uart1>;
++    status = "okay";
++};
++
++&uart3 {
++	pinctrl-names = "default";
++	pinctrl-0 = <&pinctrl_uart3>;
++	status = "okay";
++};
++
++&uart5 {
++	pinctrl-names = "default";
++	pinctrl-0 = <&pinctrl_uart5>;
++	status = "okay";
++};
++
++&flexcan1 {
++    pinctrl-names = "default";
++    pinctrl-0 = <&pinctrl_flexcan1>;
++    status = "okay";
++};
++
++&usbotg1 {
++	dr_mode = "host";
++	status = "okay";
++};
++
++&usbotg2 {
++	dr_mode = "peripheral";
++	status = "okay";
++};
++
++&usdhc2 {
++	pinctrl-names = "default";
++	pinctrl-0 = <&pinctrl_usdhc2>;
++    bus-width = <4>;
++	non-removable;
++	enable-sdio-wakeup;
++	status = "okay";
++};
++
++&usdhc3 {
++    pinctrl-names = "default";
++    pinctrl-0 = <&pinctrl_usdhc3>;
++    bus-width = <4>;
++    cd-gpios = <&gpio7 6 GPIO_ACTIVE_HIGH>;
++    wp-gpios = <&gpio7 7 GPIO_ACTIVE_HIGH>;
++    status = "okay";
++};
++
++&i2c3 {
++	clock-frequency = <100000>;
++	pinctrl-names = "default";
++	pinctrl-0 = <&pinctrl_i2c3>;
++	status = "okay";
++
++		led1: lp5562@30 {
++		compatible = "ti,lp5562";
++        label = "LED1";
++		reg = <0x30>;
++		clock-mode = /bits/8 <2>;
++
++		chan0 {
++			chan-name = "R1";
++			led-cur = /bits/ 8 <0x20>;
++			max-cur = /bits/ 8 <0x60>;
++            linux,default-trigger = "none";
++		};
++		chan1 {
++			chan-name = "G1";
++			led-cur = /bits/ 8 <0x20>;
++			max-cur = /bits/ 8 <0x60>;
++            linux,default-trigger = "none";
++		};
++
++		chan2 {
++			chan-name = "B1";
++			led-cur = /bits/ 8 <0x20>;
++			max-cur = /bits/ 8 <0x60>;
++            linux,default-trigger = "heartbeat";
++		};
++	};
++
++	led2: lp5562@32 {
++		compatible = "ti,lp5562";
++        label = "LED2";
++		reg = <0x32>;
++		clock-mode = /bits/8 <2>;
++
++		chan0 {
++			chan-name = "R2";
++			led-cur = /bits/ 8 <0x20>;
++			max-cur = /bits/ 8 <0x60>;
++            linux,default-trigger = "none";
++		};
++		chan1 {
++			chan-name = "G2";
++			led-cur = /bits/ 8 <0x20>;
++			max-cur = /bits/ 8 <0x60>;
++            linux,default-trigger = "none";
++		};
++
++		chan2 {
++			chan-name = "B2";
++			led-cur = /bits/ 8 <0x20>;
++			max-cur = /bits/ 8 <0x60>;
++            linux,default-trigger = "none";
++		};
++	};
++
++    temp: lm75@48 {
++        compatible = "national,adt75";
++        reg = <0x48>;
++        label = "temp";
++    };
++
++	expand1: pca9534@23 {
++		compatible = "nxp,pca9534";
++		gpio-controller;
++		#gpio-cells = <1>;
++		gpio-base = <200>;
++		reg = <0x23>;
++
++		can1_stby {
++			gpio-hog;
++			gpio = <0 0>;
++			output-low;
++			line-name = "can1_stby";
++		};
++
++		can1_term {
++			gpio-hog;
++			gpio = <1 0>;
++			output-low;
++			line-name = "can1_term";
++		};
++
++		can2_en {
++			gpio-hog;
++			gpio = <2 0>;
++			output-low;
++			line-name = "can2_en";
++		};
++
++		can2_stby {
++			gpio-hog;
++			gpio = <3 0>;
++			output-low;
++			line-name = "can2_stby";
++		};
++
++		can2_term {
++			gpio-hog;
++			gpio = <4 0>;
++			output-low;
++			line-name = "can2_term";
++		};
++
++		5P_en {
++			gpio-hog;
++			gpio = <6 0>;
++			output-low;
++			line-name = "5P_en";
++		};
++
++		5P_good {
++			gpio-hog;
++			gpio = <7 0>;
++			input;
++			line-name = "5P_good";
++		};
++	};
++
++	expand2: pca9534@22 {
++		compatible = "nxp,pca9534";
++		gpio-controller;
++		#gpio-cells = <1>;
++		reg = <0x22>;
++
++		do1_out {
++			gpio-hog;
++			gpio = <0 0>;
++			output-low;
++			line-name = "do1_out";
++		};
++
++		do1_state {
++			gpio-hog;
++			gpio = <1 0>;
++			input;
++			line-name = "do1_state";
++		};
++		
++		do2_out {
++			gpio-hog;
++			gpio = <3 0>;
++			output-low;
++			line-name = "do2_out";
++		};
++
++		do2_state {
++			gpio-hog;
++			gpio = <2 0>;
++			input;
++			line-name = "do2_state";
++		};
++		
++		do3_out {
++			gpio-hog;
++			gpio = <5 0>;
++			output-low;
++			line-name = "do3_out";
++		};
++
++		do3_state {
++			gpio-hog;
++			gpio = <4 0>;
++			input;
++			line-name = "do3_state";
++		};
++
++		gnss_en {
++			gpio-hog;
++			gpio = <6 0 >;
++			output-low;
++			line-name = "gnss_en";
++		};
++	};
++
++	/* Driver for PAC1710 0x18 */
++	/* Driver for BQ24151 0x6b */
++	/* Driver for MPU-9250 0x69 */
++};
++
++&i2c4 {
++	clock-frequency = <100000>;
++	pinctrl-names = "default";
++	pinctrl-0 = <&pinctrl_i2c4>;
++	status = "okay";
++
++	pmic: pfuze100@08 {
++		compatible = "fsl,pfuze200";
++		reg = <0x08>;
++
++		regulators {
++			sw1a_reg: sw1ab {
++				regulator-min-microvolt = <300000>;
++				regulator-max-microvolt = <1875000>;
++				regulator-boot-on;
++				regulator-always-on;
++				regulator-ramp-delay = <6250>;
++			};
++
++			sw2_reg: sw2 {
++				regulator-min-microvolt = <800000>;
++				regulator-max-microvolt = <3300000>;
++				regulator-boot-on;
++				regulator-always-on;
++			};
++
++			sw3a_reg: sw3a {
++				regulator-min-microvolt = <400000>;
++				regulator-max-microvolt = <1975000>;
++				regulator-boot-on;
++				regulator-always-on;
++			};
++
++			sw3b_reg: sw3b {
++				regulator-min-microvolt = <400000>;
++				regulator-max-microvolt = <1975000>;
++				regulator-boot-on;
++				regulator-always-on;
++			};
++
++			swbst_reg: swbst {
++				regulator-min-microvolt = <5000000>;
++				regulator-max-microvolt = <5150000>;
++			};
++
++			snvs_reg: vsnvs {
++				regulator-min-microvolt = <1000000>;
++				regulator-max-microvolt = <3000000>;
++				regulator-boot-on;
++				regulator-always-on;
++			};
++
++			vref_reg: vrefddr {
++				regulator-boot-on;
++				regulator-always-on;
++			};
++
++			vgen1_reg: vgen1 {
++				regulator-min-microvolt = <800000>;
++				regulator-max-microvolt = <1550000>;
++				regulator-always-on;
++			};
++
++			vgen2_reg: vgen2 {
++				regulator-min-microvolt = <800000>;
++				regulator-max-microvolt = <1550000>;
++			};
++
++			vgen3_reg: vgen3 {
++				regulator-min-microvolt = <1800000>;
++				regulator-max-microvolt = <3300000>;
++				regulator-always-on;
++			};
++
++			vgen4_reg: vgen4 {
++				regulator-min-microvolt = <1800000>;
++				regulator-max-microvolt = <3300000>;
++				regulator-always-on;
++			};
++
++			vgen5_reg: vgen5 {
++				regulator-min-microvolt = <1800000>;
++				regulator-max-microvolt = <3300000>;
++				regulator-always-on;
++			};
++
++			vgen6_reg: vgen6 {
++				regulator-min-microvolt = <1800000>;
++				regulator-max-microvolt = <3300000>;
++				regulator-always-on;
++			};
++		};
++	};
++};
++
++&ecspi3 {
++	fsl,spi-num-chipselects = <4>;
++	cs-gpios = <&gpio6 21 0>,
++	<&gpio6 13 0>,
++	<&gpio6 12 0>,
++	<&gpio6 14 0>;
++	pinctrl-names = "default";
++	pinctrl-0 = <&pinctrl_ecspi3>;
++	status = "okay";
++
++	spidev0: spi@0 {
++		spi-max-frequency = <4000000>;
++		reg = <0>;
++		compatible = "spidev";
++	};
++};
++
++&gpmi {
++    pinctrl-names = "default";
++    pinctrl-0 = <&pinctrl_gpmi_nand_1>;
++    status = "okay";
++    nand-on-flash-bbt;
++};
++
++&fec2 {
++	pinctrl-names = "default";
++	pinctrl-0 = <&pinctrl_enet>;
++	phy-mode = "rmii";
++	phy-handle = <&ethphy1>;
++	fsl,magic-packet;
++	status = "okay";
++
++	mdio {
++		#address-cells = <1>;
++		#size-cells = <0>;
++
++		ethphy1: ethernet-phy@1 {
++			compatible = "ethernet-phy-ieee802.3-c22";
++			reg = <1>;
++		};
++	};
++};
++
++&iomuxc {
++    pinctrl-names = "default";
++    pinctrl-0 = <&pinctrl_hog>;
++
++    imx6x-score {
++		pinctrl_hog: hoggrp {
++            fsl,pins = <
++			MX6SX_PAD_SD4_DATA7__GPIO6_IO_21 0x80000000 // SPI3 SS0
++			MX6SX_PAD_SD4_CMD__GPIO6_IO_13 0x80000000 // SPI3 SS1
++			MX6SX_PAD_SD4_CLK__GPIO6_IO_12 0x80000000 // SPI3 SS2
++			MX6SX_PAD_SD4_DATA0__GPIO6_IO_14 0x80000000 // SPI3 SS3
++            >;
++        };
++
++		pinctrl_gpmi_nand_1: gpmi-nand-1 {
++            fsl,pins = <
++            MX6SX_PAD_NAND_CLE__RAWNAND_CLE         0xb0b1
++            MX6SX_PAD_NAND_ALE__RAWNAND_ALE         0xb0b1
++            MX6SX_PAD_NAND_WP_B__RAWNAND_WP_B       0xb0b1
++            MX6SX_PAD_NAND_READY_B__RAWNAND_READY_B 0xb000
++            MX6SX_PAD_NAND_CE0_B__RAWNAND_CE0_B     0xb0b1
++            MX6SX_PAD_NAND_RE_B__RAWNAND_RE_B       0xb0b1
++            MX6SX_PAD_NAND_WE_B__RAWNAND_WE_B       0xb0b1
++            MX6SX_PAD_NAND_DATA00__RAWNAND_DATA00   0xb0b1
++            MX6SX_PAD_NAND_DATA01__RAWNAND_DATA01   0xb0b1
++            MX6SX_PAD_NAND_DATA02__RAWNAND_DATA02   0xb0b1
++            MX6SX_PAD_NAND_DATA03__RAWNAND_DATA03   0xb0b1
++            MX6SX_PAD_NAND_DATA04__RAWNAND_DATA04   0xb0b1
++            MX6SX_PAD_NAND_DATA05__RAWNAND_DATA05   0xb0b1
++            MX6SX_PAD_NAND_DATA06__RAWNAND_DATA06   0xb0b1
++            MX6SX_PAD_NAND_DATA07__RAWNAND_DATA07   0xb0b1
++            >;
++        };
++
++		pinctrl_i2c3: i2c3grp {
++			fsl,pins = <
++			MX6SX_PAD_KEY_ROW4__I2C3_SDA 0x4001b8b1
++			MX6SX_PAD_KEY_COL4__I2C3_SCL 0x4001b8b1
++			>;
++		};
++
++		pinctrl_i2c4: i2c4grp {
++            fsl,pins = <
++            MX6SX_PAD_USB_H_DATA__I2C4_SDA 0x4001b8b1
++            MX6SX_PAD_USB_H_STROBE__I2C4_SCL 0x4001b8b1
++            >;
++        };
++
++		pinctrl_ecspi3: ecspi3grp {
++			fsl,pins = <
++			MX6SX_PAD_SD4_DATA4__ECSPI3_SCLK 0x100b1
++			MX6SX_PAD_SD4_DATA5__ECSPI3_MOSI 0x100b1
++			MX6SX_PAD_SD4_DATA6__ECSPI3_MISO 0x100b1
++			>;
++		};
++
++
++		pinctrl_flexcan1: flexcan1grp {
++            fsl,pins = <
++            MX6SX_PAD_KEY_ROW2__CAN1_RX			0x1b020
++            MX6SX_PAD_KEY_COL2__CAN1_TX			0x1b020
++            >;
++        };
++
++		pinctrl_enet: enet2grp {
++			fsl,pins = <
++			MX6SX_PAD_ENET1_MDIO__ENET2_MDIO        0xa0b1
++			MX6SX_PAD_ENET1_MDC__ENET2_MDC          0xa0b1
++			MX6SX_PAD_ENET2_TX_CLK__ENET2_REF_CLK2   0x3081
++			MX6SX_PAD_RGMII2_TD0__ENET2_TX_DATA_0   0xa0b1
++			MX6SX_PAD_RGMII2_TD1__ENET2_TX_DATA_1   0xa0b1
++			MX6SX_PAD_RGMII2_TX_CTL__ENET2_TX_EN    0xa0b1
++			MX6SX_PAD_RGMII2_RXC__ENET2_RX_ER      0x3081
++			MX6SX_PAD_RGMII2_RD0__ENET2_RX_DATA_0   0x3081
++			MX6SX_PAD_RGMII2_RD1__ENET2_RX_DATA_1   0x3081
++			MX6SX_PAD_RGMII2_RX_CTL__ENET2_RX_EN    0x3081
++			>;
++		};
++
++		pinctrl_i2c1: i2c1grp {
++            fsl,pins = <
++            MX6SX_PAD_GPIO1_IO01__I2C1_SDA 0x4001b8b1
++            MX6SX_PAD_GPIO1_IO00__I2C1_SCL 0x4001b8b1
++            >;
++        };
++
++		pinctrl_uart1: uart1grp {
++            fsl,pins = <
++            MX6SX_PAD_GPIO1_IO04__UART1_TX		0x1b0b1
++            MX6SX_PAD_GPIO1_IO05__UART1_RX		0x1b0b1
++            >;
++        };
++
++		pinctrl_uart3: uart3grp {
++			fsl,pins = <
++			MX6SX_PAD_SD3_DATA4__UART3_RX 0x1b0b1
++			MX6SX_PAD_SD3_DATA5__UART3_TX 0x1b0b1
++			>;
++		};
++
++		pinctrl_uart5: uart5grp {
++			fsl,pins = <
++			MX6SX_PAD_KEY_ROW3__UART5_RX 0x1b0b1
++			MX6SX_PAD_KEY_COL3__UART5_TX 0x1b0b1
++			>;
++		};
++		
++        pinctrl_usdhc2: usdhc2grp {
++			fsl,pins = <
++				MX6SX_PAD_SD2_CMD__USDHC2_CMD		0x17059
++				MX6SX_PAD_SD2_CLK__USDHC2_CLK		0x10059
++				MX6SX_PAD_SD2_DATA0__USDHC2_DATA0	0x17059
++				MX6SX_PAD_SD2_DATA1__USDHC2_DATA1	0x17059
++				MX6SX_PAD_SD2_DATA2__USDHC2_DATA2	0x17059
++				MX6SX_PAD_SD2_DATA3__USDHC2_DATA3	0x17059
++			>;
++		};
++
++		pinctrl_usdhc3: usdhc3grp {
++            fsl,pins = <
++            MX6SX_PAD_SD3_CMD__USDHC3_CMD		0x17069
++            MX6SX_PAD_SD3_CLK__USDHC3_CLK		0x10071
++            MX6SX_PAD_SD3_DATA0__USDHC3_DATA0	0x17069
++            MX6SX_PAD_SD3_DATA1__USDHC3_DATA1	0x17069
++            MX6SX_PAD_SD3_DATA2__USDHC3_DATA2	0x17069
++            MX6SX_PAD_SD3_DATA3__USDHC3_DATA3	0x17069
++            MX6SX_PAD_SD3_DATA4__GPIO7_IO_6		0x17059 /* CD */
++            MX6SX_PAD_SD3_DATA5__GPIO7_IO_7		0x17059 /* WP */
++            >;
++        };
++    };
++};
+-- 
+1.9.1
+

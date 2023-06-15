@@ -1,0 +1,43 @@
+From 4e8e0659938b290ef08bdac70b41c372f9938437 Mon Sep 17 00:00:00 2001
+From: Robert Lehmann <robert.lehmann@sitec-systems.de>
+Date: Wed, 17 Jan 2018 16:36:00 +0100
+Subject: [PATCH 1028/1028] mach-imx6sx: Add init of fc gpios
+
+Add init state for FC gpios.
+
+Ticket #2204
+---
+ arch/arm/mach-imx/mach-imx6sx.c | 10 ++++++++++
+ 1 file changed, 10 insertions(+)
+
+diff --git a/arch/arm/mach-imx/mach-imx6sx.c b/arch/arm/mach-imx/mach-imx6sx.c
+index 88e71b6..0fee2c2 100644
+--- a/arch/arm/mach-imx/mach-imx6sx.c
++++ b/arch/arm/mach-imx/mach-imx6sx.c
+@@ -219,6 +219,12 @@ static void imx6sx_gpio_setup_s4_native(void)
+ #define S4_GNSS_PWR_E 509
+ #define S4_GSM_PWR_E 510
+ #define S4_WIFI_PWR_E 511
++
++// Setup board
++#define S4_FC_ADC_E 490
++#define S4_FC_RS232_E 488
++#define S4_FC_RS485_E 489
++#define S4_FC_RESET 492
+ static void imx6sx_gpio_setup_s4_expander(void)
+ {
+ 	pr_info("S4: Doing GPIO expander init\n");
+@@ -238,6 +244,10 @@ static void imx6sx_gpio_setup_s4_expander(void)
+ 	gpio_request_export(S4_DO3_STATE, GPIOF_IN, DO3_STATE);
+ 	gpio_request_export(S4_GNSS_PWR_E, GPIOF_OUT_INIT_LOW, GNSS_PWR_E);
+ 	gpio_request_export(S4_GSM_PWR_E, GPIOF_OUT_INIT_LOW, GSM_PWR_E);
++	gpio_request_export(S4_FC_ADC_E, GPIOF_OUT_INIT_LOW, "fc_adc_enable");
++	gpio_request_export(S4_FC_RS232_E, GPIOF_OUT_INIT_LOW, "fc_rs232_enable");
++	gpio_request_export(S4_FC_RS485_E, GPIOF_OUT_INIT_LOW, "fc_rs485_enable");
++	gpio_request_export(S4_FC_RESET, GPIOF_OUT_INIT_LOW, "fc_reset");
+ 	pr_info("S4: Finished GPIO expander init\n");
+ }
+ 
+-- 
+2.1.4
+

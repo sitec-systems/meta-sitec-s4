@@ -1,0 +1,36 @@
+From f4a726e922b1924daf97a79b88c811f25ef626a2 Mon Sep 17 00:00:00 2001
+From: Robert Lehmann <robert.lehmann@sitec-systems.de>
+Date: Mon, 1 Aug 2016 09:55:51 +0200
+Subject: [PATCH] dts: imx6sx-s4: Add base for I2C io expander.
+
+This is necessary to give the gpios the same number on each bootup.
+
+Ticket #1247
+---
+ arch/arm/boot/dts/imx6sx-s4.dts | 3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
+
+diff --git a/arch/arm/boot/dts/imx6sx-s4.dts b/arch/arm/boot/dts/imx6sx-s4.dts
+index 0554314..0695cad 100644
+--- a/arch/arm/boot/dts/imx6sx-s4.dts
++++ b/arch/arm/boot/dts/imx6sx-s4.dts
+@@ -187,7 +187,7 @@
+ 		compatible = "nxp,pca9534";
+ 		gpio-controller;
+ 		#gpio-cells = <1>;
+-		gpio-base = <200>;
++		gpio-base = <300>;
+ 		reg = <0x23>;
+ 
+ 		can1_stby {
+@@ -244,6 +244,7 @@
+ 		compatible = "nxp,pca9534";
+ 		gpio-controller;
+ 		#gpio-cells = <1>;
++        gpio-base = <308>;
+ 		reg = <0x22>;
+ 
+ 		do1_out {
+-- 
+1.9.1
+

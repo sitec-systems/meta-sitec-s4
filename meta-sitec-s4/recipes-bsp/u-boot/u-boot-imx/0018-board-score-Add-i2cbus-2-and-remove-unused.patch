@@ -1,0 +1,150 @@
+From 9ee916ce5fcdb52ac87c479bbfcdb08b555ef0f1 Mon Sep 17 00:00:00 2001
+From: Robert Lehmann <robert.lehmann@sitec-systems.de>
+Date: Thu, 9 Mar 2017 16:11:23 +0100
+Subject: [PATCH 18/19] board: score: Add i2cbus 2 and remove unused
+
+Add pinmuxing for i2cbus 2. This bus is used for board internal components (like port expander).
+The pca9535 port expander now uses this bus for the communication.
+
+Although remove some dead code.
+
+Ticket #1762
+---
+ board/sitec-systems/score/score.c | 101 +++-----------------------------------
+ 1 file changed, 8 insertions(+), 93 deletions(-)
+
+diff --git a/board/sitec-systems/score/score.c b/board/sitec-systems/score/score.c
+index 482b912..0bfa34f 100644
+--- a/board/sitec-systems/score/score.c
++++ b/board/sitec-systems/score/score.c
+@@ -74,30 +74,17 @@ DECLARE_GLOBAL_DATA_PTR;
+ 
+ #ifdef CONFIG_SYS_I2C_MXC
+ #define PC MUX_PAD_CTRL(I2C_PAD_CTRL)
+-/* I2C1 for PMIC */
+-struct i2c_pads_info i2c_pad_info1 = {
+-	.scl = {
+-		.i2c_mode = MX6_PAD_GPIO1_IO00__I2C1_SCL | PC,
+-		.gpio_mode = MX6_PAD_GPIO1_IO00__GPIO1_IO_0 | PC,
+-		.gp = IMX_GPIO_NR(1, 0),
+-	},
+-	.sda = {
+-		.i2c_mode = MX6_PAD_GPIO1_IO01__I2C1_SDA | PC,
+-		.gpio_mode = MX6_PAD_GPIO1_IO01__GPIO1_IO_1 | PC,
+-		.gp = IMX_GPIO_NR(1, 1),
+-	},
+-};
+ 
+-struct i2c_pads_info i2c_pad_info3 = {
++struct i2c_pads_info i2c_pad_info2 = {
+ 	.scl = {
+-		.i2c_mode = MX6_PAD_KEY_COL4__I2C3_SCL |PC,
+-		.gpio_mode = MX6_PAD_KEY_COL4__GPIO2_IO_14 | PC,
+-		.gp = IMX_GPIO_NR(2, 14),
++		.i2c_mode = MX6_PAD_SD4_DATA3__I2C2_SCL |PC,
++		.gpio_mode = MX6_PAD_SD4_DATA3__GPIO6_IO_17 | PC,
++		.gp = IMX_GPIO_NR(6, 17),
+ 	},
+ 	.sda = {
+-		.i2c_mode = MX6_PAD_KEY_ROW4__I2C3_SDA | PC,
+-		.gpio_mode = MX6_PAD_KEY_ROW4__GPIO2_IO_19 | PC,
+-		.gp = IMX_GPIO_NR(2, 19),
++		.i2c_mode = MX6_PAD_SD4_DATA2__I2C2_SDA | PC,
++		.gpio_mode = MX6_PAD_SD4_DATA2__GPIO6_IO_16 | PC,
++		.gp = IMX_GPIO_NR(6, 16),
+ 	},
+ };
+ 
+@@ -185,68 +172,6 @@ static void setup_gpmi_nand(void)
+ }
+ /*#endif // CONFIG_NAND_MXS*/
+ 
+-#ifdef CONFIG_FEC_MXC
+-/* static iomux_v3_cfg_t const fec_pads[] = { */
+-/*     MX6_PAD_ENET1_MDC__ENET2_MDC | MUX_PAD_CTRL(ENET_PAD_CTRL), */
+-/*     MX6_PAD_ENET1_MDIO__ENET2_MDIO | MUX_PAD_CTRL(ENET_PAD_CTRL), */
+-/* 	MX6_PAD_RGMII2_RD0__ENET2_RX_DATA_0 | MUX_PAD_CTRL(ENET_RX_PAD_CTRL), */
+-/*     MX6_PAD_RGMII2_RD1__ENET2_RX_DATA_1 | MUX_PAD_CTRL(ENET_RX_PAD_CTRL), */
+-/*     MX6_PAD_RGMII2_TD0__ENET2_TX_DATA_0 | MUX_PAD_CTRL(ENET_PAD_CTRL), */
+-/*     MX6_PAD_RGMII2_TD1__ENET2_TX_DATA_1 | MUX_PAD_CTRL(ENET_PAD_CTRL), */
+-/*     MX6_PAD_RGMII2_TX_CTL__ENET2_TX_EN | MUX_PAD_CTRL(ENET_PAD_CTRL), */
+-/*     MX6_PAD_RGMII2_RX_CTL__ENET2_RX_EN | MUX_PAD_CTRL(ENET_PAD_CTRL), */
+-/* 	MX6_PAD_RGMII2_RXC__ENET2_RX_ER | MUX_PAD_CTRL(ENET_PAD_CTRL), */
+-/*     MX6_PAD_ENET2_TX_CLK__ENET2_REF_CLK2 | MUX_PAD_CTRL(ENET_CLK_PAD_CTRL), */
+-/* }; */
+-
+-/* static iomux_v3_cfg_t const phy_ctrl_pads[] = { */
+-/*     MX6_PAD_QSPI1B_DATA2__GPIO4_IO_26 | MUX_PAD_CTRL(NO_PAD_CTRL), */
+-/* }; */
+-
+-/* int board_eth_init(bd_t *bis) */
+-/* { */
+-/*     int ret; */
+-
+-/*     imx_iomux_v3_setup_multiple_pads(fec_pads, ARRAY_SIZE(fec_pads)); */
+-
+-/*     ret = fecmxc_initialize_multi(bis, 1, CONFIG_FEC_MXC_PHYADDR, IMX_FEC_BASE); */
+-/*     if (ret) */
+-/*         printf("FEC%d, MXC: %s: failed\n", 1, __func__); */
+-
+-/*     return 0; */
+-/* } */
+-
+-/* static int setup_fec(void) */
+-/* { */
+-/* 	int ret = 0; */
+-
+-/* 	struct iomuxc_gpr_base_regs *const iomuxc_gpr_regs */
+-/* 		= (struct iomuxc_gpr_base_regs *) IOMUXC_GPR_BASE_ADDR; */
+-
+-/*     /\* Use external OSC for ENET2 REF_CLK, set gpr1[14], clear gpr1[18]*\/ */
+-/*     clrsetbits_le32(&iomuxc_gpr_regs->gpr[1], IOMUX_GPR1_FEC2_MASK, 1 << 18); */
+-
+-/*     imx_iomux_v3_setup_multiple_pads(phy_ctrl_pads, ARRAY_SIZE(phy_ctrl_pads)); */
+-/*     gpio_set_value(IMX_GPIO_NR(4, 26), 0); */
+-
+-/* 	ret = enable_fec_anatop_clock(1, ENET_50MHz); */
+-/* 	if (ret) */
+-/* 		return ret; */
+-
+-/* 	enable_enet_clock(); */
+-/*     return 0; */
+-/* } */
+-
+-/* int board_phy_config(struct phy_device *dev) */
+-/* { */
+-/* 	if (dev->drv->config) */
+-/* 		dev->drv->config(dev); */
+-
+-/*     return 0; */
+-/* } */
+-#endif // CONFIG_FEC_MXC
+-
+-
+ #ifdef CONFIG_FSL_ESDHC
+ static iomux_v3_cfg_t const usdhc3_pads[] = {
+     MX6_PAD_SD3_CLK__USDHC3_CLK | MUX_PAD_CTRL(USDHC_PAD_CTRL),
+@@ -683,19 +608,9 @@ int board_init(void)
+     /* Address of boot parameters */
+     gd->bd->bi_boot_params = PHYS_SDRAM + 0x100;
+ 
+-#ifdef CONFIG_SYS_I2C_MXC
+-	setup_i2c(0, CONFIG_SYS_I2C_SPEED, 0x7f, &i2c_pad_info1);
+-	setup_i2c(2, CONFIG_SYS_I2C_SPEED, 0x7f, &i2c_pad_info3);
++	setup_i2c(1, CONFIG_SYS_I2C_SPEED, 0x7f, &i2c_pad_info2);
+ 	setup_i2c(3, CONFIG_SYS_I2C_SPEED, 0x7f, &i2c_pad_info4);
+-#endif
+-
+ 	setup_spinor();
+-
+-#ifdef CONFIG_SITEC_S2
+-    printf("Hello World from S2\n");
+-#else
+-    printf("Hello World from S Core\n");
+-#endif
+     setup_gpmi_nand();
+     setup_gpio();
+     return 0;
+-- 
+2.1.4
+

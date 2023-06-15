@@ -1,0 +1,40 @@
+From 21e8ba212df5f784f595f815af441935c68a632d Mon Sep 17 00:00:00 2001
+From: Robert Lehmann <robert.lehmann@sitec-systems.de>
+Date: Thu, 17 Oct 2019 09:42:04 +0000
+Subject: [PATCH] net:phy:tja110x: Adding reduced drive strength option
+
+During initialization the option for reducing the drive strength on the RMII pins. This
+reduces the peaks on the EMI measurements.
+
+Ticket #3214
+---
+ drivers/net/phy/tja110x.c | 9 +++++----
+ 1 file changed, 5 insertions(+), 4 deletions(-)
+ mode change 100644 => 100755 drivers/net/phy/tja110x.c
+
+diff --git a/drivers/net/phy/tja110x.c b/drivers/net/phy/tja110x.c
+old mode 100644
+new mode 100755
+index c663278..254b6a4
+--- a/drivers/net/phy/tja110x.c
++++ b/drivers/net/phy/tja110x.c
+@@ -152,11 +152,12 @@ static int nxp_config_init(struct phy_device *phydev)
+ 	switch (phydev->phy_id & NXP_PHY_ID_MASK) {
+ 	case NXP_PHY_ID_TJA1100:
+ 		reg_name = MII_CFG1;
+-		reg_value = TJA1100_CFG1_LED_EN | CFG1_LED_LINKUP | CFG1_RMII_25MHZ_MODE;
+-		if (!managed_mode)
+-			reg_value |= TJA1100_CFG1_AUTO_OP;
++		reg_value = TJA1100_CFG1_LED_EN | CFG1_LED_LINKUP | CFG1_RMII_25MHZ_MODE | 
++            CFG1_MII_DRIVER | CFG1_AUTO_PWD ;
++        if (!managed_mode)
++            reg_value |= TJA1100_CFG1_AUTO_OP;
+ 		reg_mask = TJA1100_CFG1_AUTO_OP |
+-		    TJA1100_CFG1_LED_EN | TJA1100_CFG1_LED_MODE;
++		    TJA1100_CFG1_LED_EN | TJA1100_CFG1_LED_MODE; 
+ 		break;
+ 	case NXP_PHY_ID_TJA1101:
+ 		/* fall through */
+-- 
+2.1.4
+

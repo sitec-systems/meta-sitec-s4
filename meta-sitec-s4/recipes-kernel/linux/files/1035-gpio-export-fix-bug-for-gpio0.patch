@@ -1,0 +1,29 @@
+From 307a4b969c21dc5b80c244248db17b4eac291fb8 Mon Sep 17 00:00:00 2001
+From: Robert Lehmann <robert.lehmann@sitec-systems.de>
+Date: Fri, 3 May 2019 15:36:20 +0200
+Subject: [PATCH] gpio-export: fix bug for gpio0
+
+change the check for reading the gpio number from the device tree. this
+allows the gpio number 0.
+
+ticket #2894
+---
+ drivers/misc/gpio-export.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/drivers/misc/gpio-export.c b/drivers/misc/gpio-export.c
+index b3dd0e1..1fe5b76 100644
+--- a/drivers/misc/gpio-export.c
++++ b/drivers/misc/gpio-export.c
+@@ -34,7 +34,7 @@ static int gpio_exp_get_gpio(struct device_node *np)
+ 
+     // first try to get named gpio
+     gpio = of_get_named_gpio(np, "en-gpio", 0);
+-    if (gpio > 0) {
++    if (gpio >= 0) {
+         return gpio;
+     }
+ 
+-- 
+2.7.4
+

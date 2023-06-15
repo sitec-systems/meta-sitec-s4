@@ -1,0 +1,519 @@
+From 98dbfbcf75a4a56a0a2093bb0ff1a7be583a6153 Mon Sep 17 00:00:00 2001
+From: Robert Lehmann <robert.lehmann@sitec-systems.de>
+Date: Thu, 2 Mar 2017 10:07:22 +0000
+Subject: [PATCH] imx6sx-s4: Change device tree for new hardware revision
+
+The new hardware revision effects some changes of the native gpios. It
+although introduces a new IO expander on the I2C bus which replaces the two
+old ones.
+
+The S4 internal I2C bus is changed with the external I2C bus.
+
+Ticket #1680
+---
+ arch/arm/boot/dts/imx6sx-s4.dts | 318 ++++++++++++++++++++--------------------
+ 1 file changed, 158 insertions(+), 160 deletions(-)
+
+diff --git a/arch/arm/boot/dts/imx6sx-s4.dts b/arch/arm/boot/dts/imx6sx-s4.dts
+index 4bd0769..681bf90 100644
+--- a/arch/arm/boot/dts/imx6sx-s4.dts
++++ b/arch/arm/boot/dts/imx6sx-s4.dts
+@@ -14,29 +14,30 @@
+ #include "imx6sx-score.dtsi"
+ 
+ / {
+-    model = "sitec systems S4";
+-    compatible = "fsl,imx6sx-s4", "fsl,imx6sx";
+-
+-    chosen {
+-        stdout-path = &uart1;
+-    };
+-
+-    memory {
+-        reg = <0x80000000 0x20000000>;
+-    };
+-
+-    leds {
+-        compatible = "gpio-leds";
+-        alive {
+-            label = "Alive";
+-            gpios = <&gpio3 19 GPIO_ACTIVE_HIGH>;
+-            linux,default-trigger = "heartbeat";
+-        };
+-        led {
+-            label = "Red_led";
+-            gpios = <&gpio3 20 GPIO_ACTIVE_HIGH>;
+-        };
+-    };
++	model = "sitec systems S4";
++	compatible = "fsl,imx6sx-s4", "fsl,imx6sx";
++
++	chosen {
++		stdout-path = &uart1;
++	};
++
++	memory {
++		reg = <0x80000000 0x20000000>;
++	};
++
++	leds {
++		compatible = "gpio-leds";
++		alive {
++			label = "Alive";
++			gpios = <&gpio3 19 GPIO_ACTIVE_HIGH>;
++			linux,default-trigger = "heartbeat";
++		};
++		led {
++			label = "Red_led";
++			gpios = <&gpio3 20 GPIO_ACTIVE_HIGH>;
++		};
++	};
++
+ 	clocks {
+ 		clk20M: can_clock {
+ 			compatible = "fixed-clock";
+@@ -47,34 +48,34 @@
+ };
+ 
+ &cpu0 {
+-    operating-points = <
+-    /* kHz    uV */
+-    996000  1250000
+-    792000  1175000
+-    396000  1175000
+-    198000	1175000
+-    >;
+-    fsl,soc-operating-points = <
+-    /* ARM kHz      SOC uV */
+-    996000	1250000
+-    792000	1175000
+-    396000	1175000
+-    198000	1175000
+-    >;
+-    arm-supply = <&reg_arm>;
+-    soc-supply = <&reg_soc>;
++	operating-points = <
++	/* kHz    uV */
++	996000  1250000
++	792000  1175000
++	396000  1175000
++	198000	1175000
++	>;
++	fsl,soc-operating-points = <
++	/* ARM kHz      SOC uV */
++	996000	1250000
++	792000	1175000
++	396000	1175000
++	198000	1175000
++	>;
++	arm-supply = <&reg_arm>;
++	soc-supply = <&reg_soc>;
+ };
+ 
+ &gpc {
+-    /* use ldo-bypass, u-boot will check it and configure */
+-    fsl,ldo-bypass = <0>;
+-    fsl,wdog-reset = <1>; /* watchdog select of reset source */
++	/* use ldo-bypass, u-boot will check it and configure */
++	fsl,ldo-bypass = <0>;
++	fsl,wdog-reset = <1>; /* watchdog select of reset source */
+ };
+ 
+ &uart1 {
+-    pinctrl-names = "default";
+-    pinctrl-0 = <&pinctrl_uart1>;
+-    status = "okay";
++	pinctrl-names = "default";
++	pinctrl-0 = <&pinctrl_uart1>;
++	status = "okay";
+ };
+ 
+ &uart3 {
+@@ -83,16 +84,16 @@
+ 	status = "okay";
+ };
+ 
+-&uart5 {
++&uart6 {
+ 	pinctrl-names = "default";
+-	pinctrl-0 = <&pinctrl_uart5>;
++	pinctrl-0 = <&pinctrl_uart6>;
+ 	status = "okay";
+ };
+ 
+-&flexcan1 {
+-    pinctrl-names = "default";
+-    pinctrl-0 = <&pinctrl_flexcan1>;
+-    status = "okay";
++&flexcan2 {
++	pinctrl-names = "default";
++	pinctrl-0 = <&pinctrl_flexcan2>;
++	status = "okay";
+ };
+ 
+ &usbotg1 {
+@@ -108,17 +109,17 @@
+ &usdhc2 {
+ 	pinctrl-names = "default";
+ 	pinctrl-0 = <&pinctrl_usdhc2>;
+-    bus-width = <4>;
++	bus-width = <4>;
+ 	non-removable;
+ 	enable-sdio-wakeup;
+ 	status = "okay";
+ };
+ 
+ &usdhc3 {
+-    pinctrl-names = "default";
+-    pinctrl-0 = <&pinctrl_usdhc3>;
+-    bus-width = <4>;
+-    status = "okay";
++	pinctrl-names = "default";
++	pinctrl-0 = <&pinctrl_usdhc3>;
++	bus-width = <4>;
++	status = "okay";
+ };
+ 
+ &i2c2 {
+@@ -134,9 +135,9 @@
+ 	pinctrl-0 = <&pinctrl_i2c3>;
+ 	status = "okay";
+ 
+-		led1: lp5562@30 {
++	led1: lp5562@30 {
+ 		compatible = "ti,lp5562";
+-        label = "LED1";
++		label = "LED1";
+ 		reg = <0x30>;
+ 		clock-mode = /bits/8 <2>;
+ 
+@@ -144,26 +145,26 @@
+ 			chan-name = "R1";
+ 			led-cur = /bits/ 8 <0x20>;
+ 			max-cur = /bits/ 8 <0x60>;
+-            linux,default-trigger = "none";
++			linux,default-trigger = "none";
+ 		};
+ 		chan1 {
+ 			chan-name = "G1";
+ 			led-cur = /bits/ 8 <0x20>;
+ 			max-cur = /bits/ 8 <0x60>;
+-            linux,default-trigger = "none";
++			linux,default-trigger = "none";
+ 		};
+ 
+ 		chan2 {
+ 			chan-name = "B1";
+ 			led-cur = /bits/ 8 <0x20>;
+ 			max-cur = /bits/ 8 <0x60>;
+-            linux,default-trigger = "heartbeat";
++			linux,default-trigger = "heartbeat";
+ 		};
+ 	};
+ 
+ 	led2: lp5562@32 {
+ 		compatible = "ti,lp5562";
+-        label = "LED2";
++		label = "LED2";
+ 		reg = <0x32>;
+ 		clock-mode = /bits/8 <2>;
+ 
+@@ -171,41 +172,34 @@
+ 			chan-name = "R2";
+ 			led-cur = /bits/ 8 <0x20>;
+ 			max-cur = /bits/ 8 <0x60>;
+-            linux,default-trigger = "none";
++			linux,default-trigger = "none";
+ 		};
+ 		chan1 {
+ 			chan-name = "G2";
+ 			led-cur = /bits/ 8 <0x20>;
+ 			max-cur = /bits/ 8 <0x60>;
+-            linux,default-trigger = "none";
++			linux,default-trigger = "none";
+ 		};
+ 
+ 		chan2 {
+ 			chan-name = "B2";
+ 			led-cur = /bits/ 8 <0x20>;
+ 			max-cur = /bits/ 8 <0x60>;
+-            linux,default-trigger = "none";
++			linux,default-trigger = "none";
+ 		};
+ 	};
+ 
+-    temp: lm75@48 {
+-        compatible = "national,adt75";
+-        reg = <0x48>;
+-        label = "temp";
+-    };
+-
+-	expand1: pca9534@23 {
+-		compatible = "nxp,pca9534";
+-		gpio-controller;
+-		#gpio-cells = <1>;
+-		reg = <0x23>;
++	temp: lm75@48 {
++		compatible = "national,adt75";
++		reg = <0x48>;
++		label = "temp";
+ 	};
+ 
+-	expand2: pca9534@22 {
+-		compatible = "nxp,pca9534";
++	expand1: pca9535@20 {
++		compatible = "nxp,pca9535";
+ 		gpio-controller;
+ 		#gpio-cells = <1>;
+-		reg = <0x22>;
++		reg = <0x20>;
+ 	};
+ 
+ 	/* Driver for PAC1710 0x18 */
+@@ -326,7 +320,7 @@
+ 		supply-gpio = <506>;
+ 		standby-gpio = <504>;
+ 	};
+-	
++
+ 	spidev1: spi@1 {
+ 		compatible = "microchip,mcp2515";
+ 		spi-max-frequency = <1000000>;
+@@ -338,10 +332,10 @@
+ };
+ 
+ &gpmi {
+-    pinctrl-names = "default";
+-    pinctrl-0 = <&pinctrl_gpmi_nand_1>;
+-    status = "okay";
+-    nand-on-flash-bbt;
++	pinctrl-names = "default";
++	pinctrl-0 = <&pinctrl_gpmi_nand_1>;
++	status = "okay";
++	nand-on-flash-bbt;
+ };
+ 
+ &fec2 {
+@@ -364,57 +358,62 @@
+ };
+ 
+ &iomuxc {
+-    pinctrl-names = "default";
+-    pinctrl-0 = <&pinctrl_hog>;
++	pinctrl-names = "default";
++	pinctrl-0 = <&pinctrl_hog>;
+ 
+-    imx6x-score {
++	imx6x-score {
+ 		pinctrl_hog: hoggrp {
+-            fsl,pins = <
++			fsl,pins = <
+ 			MX6SX_PAD_SD4_DATA7__GPIO6_IO_21	0x80000000	// SPI3 SS0
+ 			MX6SX_PAD_SD4_CMD__GPIO6_IO_13		0x80000000	// SPI3 SS1
+ 			MX6SX_PAD_SD4_CLK__GPIO6_IO_12		0x80000000	// SPI3 SS2
+ 			MX6SX_PAD_SD4_DATA0__GPIO6_IO_14	0x80000000	// SPI3 SS3
++			MX6SX_PAD_GPIO1_IO08__GPIO1_IO_8    0xc9		// TEMP_IRQ
++			MX6SX_PAD_GPIO1_IO09__GPIO1_IO_9    0xc9		// ACC_IRQ
++			MX6SX_PAD_GPIO1_IO02__GPIO1_IO_2    0xc9		// FC_IRQ
++			MX6SX_PAD_GPIO1_IO00__GPIO1_IO_0    0xc9		// PWR_ALERT
++			MX6SX_PAD_GPIO1_IO01__GPIO1_IO_1    0xc9		// I2C_IRQ
++			MX6SX_PAD_GPIO1_IO03__GPIO1_IO_3    0xc9		// CAN2_WAKE
++			MX6SX_PAD_KEY_ROW0__GPIO2_IO_15     0xc9		// GSM_RI
++			MX6SX_PAD_KEY_COL0__GPIO2_IO_10     0xc9		// LIN_E
++			MX6SX_PAD_KEY_COL2__GPIO2_IO_12     0xc9		// DI_K30
++			MX6SX_PAD_LCD1_DATA23__GPIO3_IO_24  0xc9		// DI1
++			MX6SX_PAD_LCD1_CLK__GPIO3_IO_0		0xc9		// DI2
++			MX6SX_PAD_LCD1_DATA15__GPIO3_IO_16  0xc9		// DI3
++			MX6SX_PAD_LCD1_RESET__GPIO3_IO_27   0xc9		// DO_IRQ
++			MX6SX_PAD_LCD1_HSYNC__GPIO3_IO_26   0xc9		// DI_K15
++			MX6SX_PAD_LCD1_DATA17__GPIO3_IO_18  0xc9		// kill_4P
++			MX6SX_PAD_LCD1_DATA08__GPIO3_IO_9   0xc9		// GSM_E_RST
++			MX6SX_PAD_LCD1_DATA00__GPIO3_IO_1   0xc9		// GSM_IGN
++			MX6SX_PAD_LCD1_DATA10__GPIO3_IO_11	0xc9		// HOST2BT
++			MX6SX_PAD_LCD1_DATA09__GPIO3_IO_10	0xc9		// HOST2WL
++			MX6SX_PAD_GPIO1_IO13__GPIO1_IO_13   0xc9		// OTG_DRVBUS
++			MX6SX_PAD_GPIO1_IO11__GPIO1_IO_11   0xc9		// SIM_SEL
+ 			MX6SX_PAD_SD3_DATA7__GPIO7_IO_9		0xc9		// K_L_PU_E
+ 			MX6SX_PAD_SD3_DATA6__GPIO7_IO_8		0xc9		// K_L_1/2
+-			MX6SX_PAD_LCD1_DATA09__GPIO3_IO_10	0xc9		// WIFI_PWR_E
+-			MX6SX_PAD_LCD1_DATA10__GPIO3_IO_11	0xc9		// kill_4P
+-			MX6SX_PAD_QSPI1B_DATA0__GPIO4_IO_24 0xc9		// GSM_PWR_E
+-			MX6SX_PAD_QSPI1B_DATA1__GPIO4_IO_25 0xc9		// SIM_SEL
+-            MX6SX_PAD_QSPI1B_SS0_B__GPIO4_IO_30 0xc9		// LAN_PWR_E
+-			MX6SX_PAD_LCD1_CLK__GPIO3_IO_0		0xc9		// DI_2
+-			MX6SX_PAD_LCD1_DATA07__GPIO3_IO_8   0xc9        // DI_3
+-			MX6SX_PAD_LCD1_ENABLE__GPIO3_IO_25	0xc9		// DI_K15
+-			MX6SX_PAD_LCD1_DATA17__GPIO3_IO_18	0xc9		// DI_K30
+-			MX6SX_PAD_LCD1_HSYNC__GPIO3_IO_26   0xc9        // GSM_RI
+-			MX6SX_PAD_LCD1_VSYNC__GPIO3_IO_28   0xc9		// PWR_ALERT
+-			MX6SX_PAD_LCD1_RESET__GPIO3_IO_27   0xc9		// FC_IRQ
+-			MX6SX_PAD_LCD1_DATA08__GPIO3_IO_9   0xc9		// I2C_IRQ
+-			MX6SX_PAD_LCD1_DATA15__GPIO3_IO_16  0xc9		// ACC_IRQ
+-			MX6SX_PAD_LCD1_DATA16__GPIO3_IO_17  0xc9		// CHRG_IRQ
+-			MX6SX_PAD_LCD1_DATA22__GPIO3_IO_23  0xb001		// TEMP_IRQ
+ 			MX6SX_PAD_GPIO1_IO12__GPIO1_IO_12	0x110b0		// Buzzer
+-            >;
+-        };
++			>;
++		};
+ 
+ 		pinctrl_gpmi_nand_1: gpmi-nand-1 {
+-            fsl,pins = <
+-            MX6SX_PAD_NAND_CLE__RAWNAND_CLE         0xb0b1
+-            MX6SX_PAD_NAND_ALE__RAWNAND_ALE         0xb0b1
+-            MX6SX_PAD_NAND_WP_B__RAWNAND_WP_B       0xb0b1
+-            MX6SX_PAD_NAND_READY_B__RAWNAND_READY_B 0xb000
+-            MX6SX_PAD_NAND_CE0_B__RAWNAND_CE0_B     0xb0b1
+-            MX6SX_PAD_NAND_RE_B__RAWNAND_RE_B       0xb0b1
+-            MX6SX_PAD_NAND_WE_B__RAWNAND_WE_B       0xb0b1
+-            MX6SX_PAD_NAND_DATA00__RAWNAND_DATA00   0xb0b1
+-            MX6SX_PAD_NAND_DATA01__RAWNAND_DATA01   0xb0b1
+-            MX6SX_PAD_NAND_DATA02__RAWNAND_DATA02   0xb0b1
+-            MX6SX_PAD_NAND_DATA03__RAWNAND_DATA03   0xb0b1
+-            MX6SX_PAD_NAND_DATA04__RAWNAND_DATA04   0xb0b1
+-            MX6SX_PAD_NAND_DATA05__RAWNAND_DATA05   0xb0b1
+-            MX6SX_PAD_NAND_DATA06__RAWNAND_DATA06   0xb0b1
+-            MX6SX_PAD_NAND_DATA07__RAWNAND_DATA07   0xb0b1
+-            >;
+-        };
++			fsl,pins = <
++			MX6SX_PAD_NAND_CLE__RAWNAND_CLE         0xb0b1
++			MX6SX_PAD_NAND_ALE__RAWNAND_ALE         0xb0b1
++			MX6SX_PAD_NAND_WP_B__RAWNAND_WP_B       0xb0b1
++			MX6SX_PAD_NAND_READY_B__RAWNAND_READY_B 0xb000
++			MX6SX_PAD_NAND_CE0_B__RAWNAND_CE0_B     0xb0b1
++			MX6SX_PAD_NAND_RE_B__RAWNAND_RE_B       0xb0b1
++			MX6SX_PAD_NAND_WE_B__RAWNAND_WE_B       0xb0b1
++			MX6SX_PAD_NAND_DATA00__RAWNAND_DATA00   0xb0b1
++			MX6SX_PAD_NAND_DATA01__RAWNAND_DATA01   0xb0b1
++			MX6SX_PAD_NAND_DATA02__RAWNAND_DATA02   0xb0b1
++			MX6SX_PAD_NAND_DATA03__RAWNAND_DATA03   0xb0b1
++			MX6SX_PAD_NAND_DATA04__RAWNAND_DATA04   0xb0b1
++			MX6SX_PAD_NAND_DATA05__RAWNAND_DATA05   0xb0b1
++			MX6SX_PAD_NAND_DATA06__RAWNAND_DATA06   0xb0b1
++			MX6SX_PAD_NAND_DATA07__RAWNAND_DATA07   0xb0b1
++			>;
++		};
+ 
+ 		pinctrl_i2c3: i2c3grp {
+ 			fsl,pins = <
+@@ -424,11 +423,11 @@
+ 		};
+ 
+ 		pinctrl_i2c4: i2c4grp {
+-            fsl,pins = <
+-            MX6SX_PAD_USB_H_DATA__I2C4_SDA 0x4001b8b1
+-            MX6SX_PAD_USB_H_STROBE__I2C4_SCL 0x4001b8b1
+-            >;
+-        };
++			fsl,pins = <
++			MX6SX_PAD_USB_H_DATA__I2C4_SDA 0x4001b8b1
++			MX6SX_PAD_USB_H_STROBE__I2C4_SCL 0x4001b8b1
++			>;
++		};
+ 
+ 		pinctrl_ecspi3: ecspi3grp {
+ 			fsl,pins = <
+@@ -439,12 +438,12 @@
+ 		};
+ 
+ 
+-		pinctrl_flexcan1: flexcan1grp {
+-            fsl,pins = <
+-            MX6SX_PAD_KEY_ROW2__CAN1_RX			0x1b020
+-            MX6SX_PAD_KEY_COL2__CAN1_TX			0x1b020
+-            >;
+-        };
++		pinctrl_flexcan2: flexcan2grp {
++			fsl,pins = <
++			MX6SX_PAD_KEY_ROW3__CAN2_RX			0x1b020
++			MX6SX_PAD_KEY_COL3__CAN2_TX			0x1b020
++			>;
++		};
+ 
+ 		pinctrl_enet: enet2grp {
+ 			fsl,pins = <
+@@ -462,19 +461,18 @@
+ 		};
+ 
+ 		pinctrl_i2c2: i2c2grp {
+-            fsl,pins = <
+-            MX6SX_PAD_SD4_DATA2__I2C2_SDA 0x4001b8b1
+-            MX6SX_PAD_SD4_DATA3__I2C2_SCL 0x4001b8b1
+-            >;
+-        };
+-
++			fsl,pins = <
++			MX6SX_PAD_SD4_DATA2__I2C2_SDA 0x4001b8b1
++			MX6SX_PAD_SD4_DATA3__I2C2_SCL 0x4001b8b1
++			>;
++		};
+ 
+ 		pinctrl_uart1: uart1grp {
+-            fsl,pins = <
+-            MX6SX_PAD_GPIO1_IO04__UART1_TX		0x1b0b1
+-            MX6SX_PAD_GPIO1_IO05__UART1_RX		0x1b0b1
+-            >;
+-        };
++			fsl,pins = <
++			MX6SX_PAD_GPIO1_IO04__UART1_TX		0x1b0b1
++			MX6SX_PAD_GPIO1_IO05__UART1_RX		0x1b0b1
++			>;
++		};
+ 
+ 		pinctrl_uart3: uart3grp {
+ 			fsl,pins = <
+@@ -483,14 +481,14 @@
+ 			>;
+ 		};
+ 
+-		pinctrl_uart5: uart5grp {
++		pinctrl_uart6: uart6grp {
+ 			fsl,pins = <
+-			MX6SX_PAD_KEY_ROW3__UART5_RX 0x1b0b1
+-			MX6SX_PAD_KEY_COL3__UART5_TX 0x1b0b1
++			MX6SX_PAD_KEY_ROW1__UART6_RX 0x1b0b1
++			MX6SX_PAD_KEY_COL1__UART6_TX 0x1b0b1
+ 			>;
+ 		};
+ 
+-        pinctrl_usdhc2: usdhc2grp {
++		pinctrl_usdhc2: usdhc2grp {
+ 			fsl,pins = <
+ 			MX6SX_PAD_SD2_CMD__USDHC2_CMD		0x17059
+ 			MX6SX_PAD_SD2_CLK__USDHC2_CLK		0x10059
+@@ -503,15 +501,15 @@
+ 		};
+ 
+ 		pinctrl_usdhc3: usdhc3grp {
+-            fsl,pins = <
+-            MX6SX_PAD_SD3_CMD__USDHC3_CMD		0x17069
+-            MX6SX_PAD_SD3_CLK__USDHC3_CLK		0x10071
+-            MX6SX_PAD_SD3_DATA0__USDHC3_DATA0	0x17069
+-            MX6SX_PAD_SD3_DATA1__USDHC3_DATA1	0x17069
+-            MX6SX_PAD_SD3_DATA2__USDHC3_DATA2	0x17069
+-            MX6SX_PAD_SD3_DATA3__USDHC3_DATA3	0x17069
+-            >;
+-        };
++			fsl,pins = <
++			MX6SX_PAD_SD3_CMD__USDHC3_CMD		0x17069
++			MX6SX_PAD_SD3_CLK__USDHC3_CLK		0x10071
++			MX6SX_PAD_SD3_DATA0__USDHC3_DATA0	0x17069
++			MX6SX_PAD_SD3_DATA1__USDHC3_DATA1	0x17069
++			MX6SX_PAD_SD3_DATA2__USDHC3_DATA2	0x17069
++			MX6SX_PAD_SD3_DATA3__USDHC3_DATA3	0x17069
++			>;
++		};
+ 
+ 		pinctrl_pwm3: pwm3grp-1 {
+ 			fsl,pins = <
+@@ -519,5 +517,5 @@
+ 		};
+ 
+ 
+-    };
++	};
+ };
+-- 
+2.1.4
+

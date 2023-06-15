@@ -1,0 +1,177 @@
+From 8bf5453bb497d88daf45ffea3d66000664d9dae5 Mon Sep 17 00:00:00 2001
+From: Robert Lehmann <robert.lehmann@sitec-systems.de>
+Date: Thu, 25 Aug 2016 09:36:02 +0200
+Subject: [PATCH 9006/9006] dts: imx6sx-s4: Cleanup dts
+
+Remove GPIOs descript for the two IO expanders. Add pinmux for diffrent
+control and digital io lines.
+
+Ticket #1247
+---
+ arch/arm/boot/dts/imx6sx-s4.dts | 128 +++++-----------------------------------
+ 1 file changed, 15 insertions(+), 113 deletions(-)
+
+diff --git a/arch/arm/boot/dts/imx6sx-s4.dts b/arch/arm/boot/dts/imx6sx-s4.dts
+index e8da8f4..1b0f104 100644
+--- a/arch/arm/boot/dts/imx6sx-s4.dts
++++ b/arch/arm/boot/dts/imx6sx-s4.dts
+@@ -112,8 +112,6 @@
+     pinctrl-names = "default";
+     pinctrl-0 = <&pinctrl_usdhc3>;
+     bus-width = <4>;
+-    cd-gpios = <&gpio7 6 GPIO_ACTIVE_HIGH>;
+-    wp-gpios = <&gpio7 7 GPIO_ACTIVE_HIGH>;
+     status = "okay";
+ };
+ 
+@@ -187,114 +185,14 @@
+ 		compatible = "nxp,pca9534";
+ 		gpio-controller;
+ 		#gpio-cells = <1>;
+-		gpio-base = <500>;
+ 		reg = <0x23>;
+-
+-		can1_stby {
+-			gpio-hog;
+-			gpio = <0 0>;
+-			output-low;
+-			line-name = "can1_stby";
+-		};
+-
+-		can1_term {
+-			gpio-hog;
+-			gpio = <1 0>;
+-			output-low;
+-			line-name = "can1_term";
+-		};
+-
+-		can2_en {
+-			gpio-hog;
+-			gpio = <2 0>;
+-			output-low;
+-			line-name = "can2_en";
+-		};
+-
+-		can2_stby {
+-			gpio-hog;
+-			gpio = <3 0>;
+-			output-low;
+-			line-name = "can2_stby";
+-		};
+-
+-		can2_term {
+-			gpio-hog;
+-			gpio = <4 0>;
+-			output-low;
+-			line-name = "can2_term";
+-		};
+-
+-		5P_en {
+-			gpio-hog;
+-			gpio = <6 0>;
+-			output-low;
+-			line-name = "5P_en";
+-		};
+-
+-		5P_good {
+-			gpio-hog;
+-			gpio = <7 0>;
+-			input;
+-			line-name = "5P_good";
+-		};
+ 	};
+ 
+ 	expand2: pca9534@22 {
+ 		compatible = "nxp,pca9534";
+ 		gpio-controller;
+ 		#gpio-cells = <1>;
+-        gpio-base = <508>;
+ 		reg = <0x22>;
+-
+-		do1_out {
+-			gpio-hog;
+-			gpio = <0 0>;
+-			output-low;
+-			line-name = "do1_out";
+-		};
+-
+-		do1_state {
+-			gpio-hog;
+-			gpio = <1 0>;
+-			input;
+-			line-name = "do1_state";
+-		};
+-		
+-		do2_out {
+-			gpio-hog;
+-			gpio = <3 0>;
+-			output-low;
+-			line-name = "do2_out";
+-		};
+-
+-		do2_state {
+-			gpio-hog;
+-			gpio = <2 0>;
+-			input;
+-			line-name = "do2_state";
+-		};
+-		
+-		do3_out {
+-			gpio-hog;
+-			gpio = <5 0>;
+-			output-low;
+-			line-name = "do3_out";
+-		};
+-
+-		do3_state {
+-			gpio-hog;
+-			gpio = <4 0>;
+-			input;
+-			line-name = "do3_state";
+-		};
+-
+-		gnss_en {
+-			gpio-hog;
+-			gpio = <6 0 >;
+-			output-low;
+-			line-name = "gnss_en";
+-		};
+ 	};
+ 
+ 	/* Driver for PAC1710 0x18 */
+@@ -447,17 +345,21 @@
+     imx6x-score {
+ 		pinctrl_hog: hoggrp {
+             fsl,pins = <
+-			MX6SX_PAD_SD4_DATA7__GPIO6_IO_21 0x80000000 // SPI3 SS0
+-			MX6SX_PAD_SD4_CMD__GPIO6_IO_13 0x80000000 // SPI3 SS1
+-			MX6SX_PAD_SD4_CLK__GPIO6_IO_12 0x80000000 // SPI3 SS2
+-			MX6SX_PAD_SD4_DATA0__GPIO6_IO_14 0x80000000 // SPI3 SS3
+-			MX6SX_PAD_SD3_DATA7__GPIO7_IO_9 0xc9 // K_L_PU_E
+-			MX6SX_PAD_SD3_DATA6__GPIO7_IO_8 0xc9 // K_L_1/2
+-			MX6SX_PAD_LCD1_DATA09__GPIO3_IO_10 0xc9 // WIFI_PWR_E
+-			MX6SX_PAD_LCD1_DATA10__GPIO3_IO_11 0xc9 // kill_4P
+-			MX6SX_PAD_QSPI1B_DATA0__GPIO4_IO_24 0xc9 // GSM_PWR_E
+-			MX6SX_PAD_QSPI1B_DATA1__GPIO4_IO_25 0xc9 // SIM_SEL
+-            MX6SX_PAD_QSPI1B_SS0_B__GPIO4_IO_30 0xc9 // LAN_PWR_E
++			MX6SX_PAD_SD4_DATA7__GPIO6_IO_21	0x80000000	// SPI3 SS0
++			MX6SX_PAD_SD4_CMD__GPIO6_IO_13		0x80000000	// SPI3 SS1
++			MX6SX_PAD_SD4_CLK__GPIO6_IO_12		0x80000000	// SPI3 SS2
++			MX6SX_PAD_SD4_DATA0__GPIO6_IO_14	0x80000000	// SPI3 SS3
++			MX6SX_PAD_SD3_DATA7__GPIO7_IO_9		0xc9		// K_L_PU_E
++			MX6SX_PAD_SD3_DATA6__GPIO7_IO_8		0xc9		// K_L_1/2
++			MX6SX_PAD_LCD1_DATA09__GPIO3_IO_10	0xc9		// WIFI_PWR_E
++			MX6SX_PAD_LCD1_DATA10__GPIO3_IO_11	0xc9		// kill_4P
++			MX6SX_PAD_QSPI1B_DATA0__GPIO4_IO_24 0xc9		// GSM_PWR_E
++			MX6SX_PAD_QSPI1B_DATA1__GPIO4_IO_25 0xc9		// SIM_SEL
++            MX6SX_PAD_QSPI1B_SS0_B__GPIO4_IO_30 0xc9		// LAN_PWR_E
++			MX6SX_PAD_LCD1_CLK__GPIO3_IO_0		0xc9		// DI_2
++			MX6SX_PAD_LCD1_DATA07__GPIO3_IO_8   0xc9        // DI_3
++			MX6SX_PAD_LCD1_ENABLE__GPIO3_IO_25	0xc9		// DI_K15
++			MX6SX_PAD_LCD1_DATA17__GPIO3_IO_18	0xc9		// DI_K30
+             >;
+         };
+ 
+-- 
+2.7.4
+

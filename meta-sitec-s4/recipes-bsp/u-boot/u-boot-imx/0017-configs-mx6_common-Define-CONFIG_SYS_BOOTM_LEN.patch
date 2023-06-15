@@ -1,0 +1,31 @@
+From 91f4d075f3384cc792320eb9aac4c3f2e57109c8 Mon Sep 17 00:00:00 2001
+From: Robert Lehmann <robert.lehmann@sitec-systems.de>
+Date: Thu, 9 Mar 2017 16:09:02 +0100
+Subject: [PATCH 17/19] configs: mx6_common: Define CONFIG_SYS_BOOTM_LEN
+
+The macro CONFIG_SYS_BOOTM_LEN will only define by the header file if it's not already
+defined. This makes it possible to define the value by yourself in the configuration header
+file for the board.
+
+Ticket #1763
+---
+ include/configs/mx6_common.h | 2 ++
+ 1 file changed, 2 insertions(+)
+
+diff --git a/include/configs/mx6_common.h b/include/configs/mx6_common.h
+index 176ec92..acb33cb 100644
+--- a/include/configs/mx6_common.h
++++ b/include/configs/mx6_common.h
+@@ -30,7 +30,9 @@ defined(CONFIG_MX6DL)) && !defined(CONFIG_MX6SOLO)
+ #define CONFIG_ARM_ERRATA_845369
+ #endif
+ 
++#ifndef CONFIG_SYS_BOOTM_LEN
+ #define CONFIG_SYS_BOOTM_LEN   0x1000000
++#endif
+ 
+ #ifndef CONFIG_SYS_L2CACHE_OFF
+ #define CONFIG_SYS_L2_PL310
+-- 
+2.1.4
+

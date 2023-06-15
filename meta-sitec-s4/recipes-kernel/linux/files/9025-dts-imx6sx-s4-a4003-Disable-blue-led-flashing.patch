@@ -1,0 +1,50 @@
+From 000816e9985c59f894d729ed9548411fcf07902c Mon Sep 17 00:00:00 2001
+From: Robert Lehmann <robert.lehmann@sitec-systems.de>
+Date: Wed, 13 May 2020 15:46:50 +0200
+Subject: [PATCH] dts: imx6sx-s4-a4003: Disable blue led flashing
+
+Ticket #3542
+---
+ arch/arm/boot/dts/imx6sx-s4-a4003.dts | 28 +++++++++++++++++++++++++++
+ 1 file changed, 28 insertions(+)
+
+diff --git a/arch/arm/boot/dts/imx6sx-s4-a4003.dts b/arch/arm/boot/dts/imx6sx-s4-a4003.dts
+index e2c78ab..638e851 100644
+--- a/arch/arm/boot/dts/imx6sx-s4-a4003.dts
++++ b/arch/arm/boot/dts/imx6sx-s4-a4003.dts
+@@ -137,4 +137,32 @@
+         #gpio-cells = <1>;
+         reg = <0x27>;
+     };
++
++    led1: lp5562@30 {
++        compatible = "ti,lp5562";
++        label = "LED1";
++        reg = <0x30>;
++        clock-mode = /bits/8 <2>;
++
++        chan0 {
++            chan-name = "R1";
++            led-cur = /bits/ 8 <0x20>;
++            max-cur = /bits/ 8 <0x60>;
++            linux,default-trigger = "none";
++        };
++        chan1 {
++            chan-name = "G1";
++            led-cur = /bits/ 8 <0x20>;
++            max-cur = /bits/ 8 <0x60>;
++            linux,default-trigger = "none";
++        };
++
++        chan2 {
++            chan-name = "B1";
++            led-cur = /bits/ 8 <0x20>;
++            max-cur = /bits/ 8 <0x60>;
++            linux,default-trigger = "none";
++        };
++    };
++
+ };
+-- 
+2.26.2
+

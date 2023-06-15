@@ -1,0 +1,18 @@
+/dev/ttyMODEMA1
+115200
+lock
+novj
+persist
+debug
+defaultroute
+ipcp-accept-local
+ipcp-accept-remote
+ipcp-restart 2
+noipdefault
+passive
+usepeerdns
+noauth
+hide-password
+holdoff 2
+maxfail 0
++ipv6

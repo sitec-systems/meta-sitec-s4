@@ -1,0 +1,87 @@
+From 647dbf12db684bf3619ea5a2b41a7fdb781c2e07 Mon Sep 17 00:00:00 2001
+From: Robert Lehmann <robert.lehmann@sitec-systems.de>
+Date: Mon, 19 Sep 2016 11:53:28 +0000
+Subject: [PATCH 7/8] board: score: Add init avail. SD interface
+
+Remove the CD and WP pins for SD3 interface. The SD-Card needs to be inserted
+before the power up.
+Add the sd2 to the bootmode structure. That means you can boot from sd2 interface
+with the bmode command.
+
+Ticket #1368
+---
+ board/sitec-systems/score/score.c | 22 ++++++----------------
+ 1 file changed, 6 insertions(+), 16 deletions(-)
+
+diff --git a/board/sitec-systems/score/score.c b/board/sitec-systems/score/score.c
+index 128c066..ffa2504 100644
+--- a/board/sitec-systems/score/score.c
++++ b/board/sitec-systems/score/score.c
+@@ -241,12 +241,6 @@ static iomux_v3_cfg_t const usdhc3_pads[] = {
+     MX6_PAD_SD3_DATA1__USDHC3_DATA1 | MUX_PAD_CTRL(USDHC_PAD_CTRL),
+     MX6_PAD_SD3_DATA2__USDHC3_DATA2 | MUX_PAD_CTRL(USDHC_PAD_CTRL),
+     MX6_PAD_SD3_DATA3__USDHC3_DATA3 | MUX_PAD_CTRL(USDHC_PAD_CTRL),
+-
+-    // CD pin
+-    MX6_PAD_SD3_DATA4__GPIO7_IO_6 | MUX_PAD_CTRL(NO_PAD_CTRL),
+-
+-    // WP pin
+-    MX6_PAD_SD3_DATA5__GPIO7_IO_7 | MUX_PAD_CTRL(NO_PAD_CTRL),
+ };
+ 
+ static iomux_v3_cfg_t const usdhc2_pads[] = {
+@@ -263,9 +257,6 @@ static struct fsl_esdhc_cfg usdhc_cfg[2] = {
+     {USDHC3_BASE_ADDR, 0, 4},
+ };
+ 
+-#define USDHC3_CD_GPIO	IMX_GPIO_NR(7, 6)
+-#define USDHC3_WP_GPIO	IMX_GPIO_NR(7, 7)
+-
+ int mmc_get_env_devno(void)
+ {
+     u32 soc_sbmr = readl(SRC_BASE_ADDR + 0x4);
+@@ -302,11 +293,11 @@ int board_mmc_getcd(struct mmc *mmc)
+ 
+     switch (cfg->esdhc_base) {
+         case USDHC2_BASE_ADDR:
+-            ret = 1; /* Assume uSDHC2 is always present */
+-            break;
++		  ret = 1; /* Assume uSDHC2 is always present */
++		  break;
+         case USDHC3_BASE_ADDR:
+-            ret = !gpio_get_value(USDHC3_CD_GPIO);
+-            break;
++		  ret = 1;
++		  break;
+     }
+ 
+     return ret;
+@@ -333,8 +324,7 @@ int board_mmc_init(bd_t *bis)
+             case 1:
+                 imx_iomux_v3_setup_multiple_pads(
+                         usdhc3_pads, ARRAY_SIZE(usdhc3_pads));
+-                gpio_direction_input(USDHC3_CD_GPIO);
+-                usdhc_cfg[1].sdhc_clk = mxc_get_clock(MXC_ESDHC3_CLK);
++				usdhc_cfg[1].sdhc_clk = mxc_get_clock(MXC_ESDHC3_CLK);
+                 break;
+             default:
+                 printf("Warning: you configured more USDHC controllers"
+@@ -664,7 +654,6 @@ int board_init(void)
+ #ifdef CONFIG_SYS_I2C_MXC
+ 	setup_i2c(0, CONFIG_SYS_I2C_SPEED, 0x7f, &i2c_pad_info1);
+ 	setup_i2c(3, CONFIG_SYS_I2C_SPEED, 0x7f, &i2c_pad_info4);
+-
+ #endif
+ 
+ 	setup_spinor();
+@@ -682,6 +671,7 @@ int board_init(void)
+ #ifdef CONFIG_CMD_BMODE
+ static const struct boot_mode board_boot_modes[] = {
+     /* 4 bit bus width */
++    {"sd2", MAKE_CFGVAL(0x40, 0x28, 0x00, 0x00)},
+     {"sd3", MAKE_CFGVAL(0x40, 0x30, 0x00, 0x00)},
+     {"spinor", MAKE_CFGVAL(0x30, 0x00, 0x00, 0x2A)},
+     {NULL,	 0},
+-- 
+2.1.4
+
